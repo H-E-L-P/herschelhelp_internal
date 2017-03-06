@@ -13,7 +13,8 @@ REQUIREMENTS = [
     'astropy',
     'pymoc',
     'healpy',
-    'sfdmap'
+    'sfdmap',
+    'seaborn'
 ]
 
 

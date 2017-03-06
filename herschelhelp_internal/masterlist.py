@@ -1,9 +1,11 @@
 from collections import Counter
 
 import numpy as np
+import seaborn as sns
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Column, hstack, vstack
+from matplotlib import pyplot as plt
 
 
 def remove_duplicates(table, ra_col="ra", dec_col="dec",
@@ -247,3 +249,51 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     merged_catalogue.remove_column('flag_merged_2')
 
     return merged_catalogue
+
+
+def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
+    """Create a diagnostic plot for astrometry.
+
+    Given catalogue coordinates and reference coordinates (e.g. Gaia), this
+    function plots two figures summarising the RA and Dec differences:
+    - A joint plot a RA-diff and Dec-diff;
+    - A RA, Dec plot of the catalogue with vectors indicating the differences.
+
+    This function does not output anything and is intended to be used within
+    a notebook to display the figures.
+
+    Parameters
+    ----------
+    cat_ra: array-like of floats
+        The right ascensions of the catalogue.
+    cat_dec: array-like of floats
+        The declinations of the catalogue.
+    ref_ra: array-like of floats
+        The right ascensions of the reference.
+    ref_dec: array-like of floats
+        The declination of the reference.
+    radius: astropy.units.Quantity
+        The maximum radius for source associations (default to 0.6 arcsec).
+
+    """
+    cat_coords = SkyCoord(cat_ra, cat_dec)
+    ref_coords = SkyCoord(ref_ra, ref_dec)
+
+    idx, d2d, _ = cat_coords.match_to_catalog_sky(ref_coords)
+    to_keep = d2d <= radius
+
+    ra_diff = (cat_coords.ra - ref_coords[idx].ra)[to_keep]
+    dec_diff = (cat_coords.dec - ref_coords[idx].dec)[to_keep]
+    cat_coords = cat_coords[to_keep]
+
+    sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
+
+    jointplot = sns.jointplot(ra_diff.arcsec, dec_diff.arcsec, kind='hex')
+    jointplot.set_axis_labels("RA diff. [arcsec]", "Dec diff. [arcsec]")
+    jointplot.ax_joint.axhline(0, color='black', linewidth=.5)
+    jointplot.ax_joint.axvline(0, color='black', linewidth=.5)
+
+    fig, axis = plt.subplots()
+    axis.quiver(cat_coords.ra, cat_coords.dec, ra_diff, dec_diff)
+    axis.set_xlabel("RA")
+    axis.set_ylabel("Dec")
