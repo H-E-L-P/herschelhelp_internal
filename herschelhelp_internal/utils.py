@@ -1,0 +1,259 @@
+import healpy as hp
+import numpy as np
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from astropy.stats import sigma_clipped_stats
+from astropy.table import Column
+
+
+def mag_to_flux(magnitudes, errors_on_magnitudes=None):
+    """Convert AB magnitudes and errors to fluxes
+
+    Given AB magnitudes and associated errors, this function returns the
+    corresponding fluxes and associated flux errors (in Jy).
+
+    The fluxes are computed with this formula:
+        F = 10^((8.9 - Mag)/2.5)
+    and the errors on fluxes with this one:
+        F_err = ln(10)/2.5 * F * Mag_err
+
+
+    Parameters
+    ----------
+    magnitudes: float or array-like of floats
+        AB magnitudes of the sources.
+    errors_on_magnitudes: float or array-like of floats
+        Error on each magnitudes. None if there are no errors.
+
+    Returns
+    -------
+    fluxes: float or array-like of floats
+        The fluxes in Jy.
+    errors: float or array-like of floats
+        The errors on fluxes in Jy or None.
+    """
+    magnitudes = np.array(magnitudes)
+    fluxes = 10 ** ((8.9 - magnitudes)/2.5)
+
+    if errors_on_magnitudes is not None:
+        errors_on_magnitudes = np.array(errors_on_magnitudes)
+        errors = np.log(10)/2.5 * fluxes * errors_on_magnitudes
+    else:
+        errors = None
+
+    return fluxes, errors
+
+
+def flux_to_mag(fluxes, errors_on_fluxes=None):
+    """Convert fluxes and errors to magnitudes
+
+    Given flux densities in Jy with associated errors, this function returns
+    the corresponding AB magnitudes en errors.
+
+    The magnitudes are computed with this formula:
+        M = 2.5 * (23 - log10(F)) - 48.6
+    and the errors on magnitudes with this one
+        M_err = 2.5/ln(10) * F_err / F
+
+    Parameters
+    ----------
+    fluxes: float or array-like of floats
+        The fluxes in Jy.
+    errors_on_fluxes: float or array-like of floats
+        The flux errors in Jy None if there are no errors.
+
+    Returns
+    -------
+    magnitudes: float or array-like of floats
+        The AB magnitudes.
+    errors: float or array-like of floats
+        The errors on AB magnitudes.
+    """
+    fluxes = np.array(fluxes)
+    magnitudes = 2.5 * (23 - np.log10(fluxes)) - 48.6
+
+    if errors_on_fluxes is not None:
+        errors_on_fluxes = np.array(errors_on_fluxes)
+        errors = 2.5 / np.log(10) * errors_on_fluxes / fluxes
+    else:
+        errors = None
+
+    return magnitudes, errors
+
+
+def aperture_correction(mag_ref, mag_target, stellarity=None, mag_min=None,
+                        mag_max=None):
+    """Compute aperture correction
+
+    Given reference magnitudes and target magnitudes this function computes the
+    aperture correction to apply to the reference to match the targets.  It may
+    optionnaly use a stellarity index and magnitude limits to make the
+    computation on a supset of the provided magnitudes.
+
+    The computation is done by sigma-clipping the difference of magnitudes at
+    3 sigma.
+
+    Parameters
+    ----------
+    mag_ref: array of floats
+        The reference magnitudes.
+    mag_target: array of floats
+        The target magnitudes. The length of the array must be the same as for
+        mag_ref.
+    stellarity: array of floats
+        The stellarity of each source. If it is provided, only the sources with
+        a stellarity above 0.9 will be used in the computation.
+    mag_min: float
+        If this parameter is provided, only the sources with a magnitude above
+        its value will be used in the computation.
+    mag_max: float
+        If this parameter is provided, only the sources with a magnitude bellow
+        its value will be used in the computation.
+
+    Returns
+    -------
+    mag_diff: float
+        The magnitude to add to the reference magnitude to match the target.
+    num: integer
+        The number of sources used in the computation.
+    std: float
+        The final standard deviation on the sigma clipping procedure.
+
+    """
+
+    mask = ~np.isnan(mag_ref) & ~np.isnan(mag_target)
+    if stellarity is not None:
+        mask &= (stellarity > 0.9)
+    if mag_min is not None:
+        mask &= (mag_ref >= mag_min)
+    if mag_max is not None:
+        mask &= (mag_ref <= mag_max)
+
+    num = mask.sum()
+
+    if num == 0:
+        raise Exception("Not enough sources!")
+
+    mag_diff = mag_target - mag_ref
+
+    _, median, std = sigma_clipped_stats(mag_diff[mask], sigma=3.0, iters=5)
+
+    # FIXME: Why do we use the median of the sigma clipping? (It's on Eduardo
+    # code).
+
+    return median, num, std
+
+
+def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
+    """Compute the offset between coordinates and reference
+
+    This function compute the RA, Dec offsets between a list of coordinates and
+    the list of reference coordinates.  This is used for correcting the
+    astrometry of a catalogue with respect to a reference catalogue.
+
+    Parameters
+    ----------
+    coords: astropy.coordinates.SkyCoord
+        The studied catalogue coordinates.
+    ref_coords: astropy.coordinates.SkyCoord
+        The coordinates of the reference catalogue.
+    max_radius: quantity
+        Maximum radius to look for counterparts.
+
+    Returns
+    -------
+    quantity, quantity
+        Tuple delta_RA, delta_Dec to be added to the coordinates to match
+        the reference.
+
+    """
+
+    # We cross-match the two catalogues and only keep the matches that are
+    # closer that the maximum radius
+    idx, d2d, _ = ref_coords.match_to_catalog_sky(coords)
+    to_keep = d2d < max_radius
+
+    ra_diff = (coords[idx].ra - ref_coords.ra)[to_keep]
+    dec_diff = (coords[idx].dec - ref_coords.dec)[to_keep]
+
+    _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
+    _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0, iters=5)
+
+    # We don't correct the astrometry when the difference is lower than
+    # 0.1 arcsec.
+    #if abs(delta_ra) < 0.1:
+    #    delta_ra = 0.
+    #if abs(delta_dec) < 0.1:
+    #    delta_dec = 0.
+
+    return delta_ra * u.arcsec, delta_dec * u.arcsec
+
+
+def inMoc(ra, dec, moc):
+    """Find source position in a MOC
+
+    Given a list of positions and a Multi Order Coverage (MOC) map, this
+    function return a boolean mask with True for sources that fall inside the
+    MOC and False elsewhere.
+
+    Parameters
+    ----------
+
+    ra: array or list of floats
+        The right ascensions of the sources.
+    dec: array or list of floats
+        The declinations of the sources.
+    moc: pymoc.MOC
+        The MOC read by pymoc
+
+    Returns
+    -------
+    array of booleans
+        The boolean mask with True for sources that fall inside the MOC.
+
+    """
+    ra, dec = np.array(ra), np.array(dec)
+
+    # We compute the HEALpix cell ids of each source at the maximum order of
+    # the MOC.
+    theta = 0.5 * np.pi - np.radians(dec)
+    phi = np.radians(ra)
+    source_healpix_cells = hp.ang2pix(2**moc.order, theta, phi, nest=True)
+
+    # Array of all the HEALpix cell ids of the MOC at its maximum order.
+    moc_healpix_cells = np.array(list(moc.flattened()))
+
+    # We look for sources that are in the MOC and return the mask
+    return np.in1d(source_healpix_cells, moc_healpix_cells)
+
+
+def gen_help_id(ra, dec):
+    """Generate the HELP identifiers for a list of sources
+
+    Parameters
+    ----------
+    ra: array of float
+        Right ascensions of the sources in degrees (J2000).
+    dec: array of float
+        Declinations of the sources in degrees (J2000).
+
+    Returns
+    -------
+    astropy.table.Column
+        A column with HELP identifiers
+
+    """
+    ra = np.array(ra) * u.degree
+    dec = np.array(dec) * u.degree
+    coords = SkyCoord(ra, dec)
+
+    idcol = np.array(coords.to_string(style='hmsdms', precision=3),
+                     dtype=np.string_)
+    idcol = np.char.replace(idcol, b'h', b'')
+    idcol = np.char.replace(idcol, b'm', b'')
+    idcol = np.char.replace(idcol, b's ', b'')
+    idcol = np.char.replace(idcol, b'd', b'')
+    idcol = np.char.replace(idcol, b's', b'')
+    idcol = np.full(idcol.shape, b'HELP_J', dtype=np.object) + idcol
+
+    return Column(data=idcol.astype(np.string_), name="help_id")

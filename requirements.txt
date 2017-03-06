@@ -1,0 +1,5 @@
+astropy
+pymoc
+healpy
+sfdmap
+
