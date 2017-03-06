@@ -184,10 +184,10 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
 
     # We don't correct the astrometry when the difference is lower than
     # 0.1 arcsec.
-    #if abs(delta_ra) < 0.1:
-    #    delta_ra = 0.
-    #if abs(delta_dec) < 0.1:
-    #    delta_dec = 0.
+    if abs(delta_ra) < 0.1:
+        delta_ra = 0.
+    if abs(delta_dec) < 0.1:
+        delta_dec = 0.
 
     return delta_ra * u.arcsec, delta_dec * u.arcsec
 
