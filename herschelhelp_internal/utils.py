@@ -1,5 +1,8 @@
+import pkg_resources
+
 import healpy as hp
 import numpy as np
+import sfdmap
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
@@ -257,3 +260,30 @@ def gen_help_id(ra, dec):
     idcol = np.full(idcol.shape, b'HELP_J', dtype=np.object) + idcol
 
     return Column(data=idcol.astype(np.string_), name="help_id")
+
+
+def ebv(ra, dec):
+    """Computes E(B-V) at the position.
+
+    This function computes the E(B-V) using the sfdmap package.  This package
+    uses the E(B-V) values from the Schlegel, Finkbeiner & Davis (1998) dust
+    map and a scaling of 0.86 is applied to the values to reflect the
+    recalibration by Schlafly & Finkbeiner (2011).
+
+    Parameters
+    ----------
+    ra: array-like of floats
+        The right ascensions of the positions.
+    dec: array-like of floats
+        The declinations of the positions.
+
+    Returns
+    -------
+    ebv_col: astropy.table.Column
+        An astropy table column named `ebv`.
+    """
+    dust_maps = sfdmap.SFDMap(
+        pkg_resources.resource_filename(__name__, 'sfd_data')
+    )
+
+    return Column(dust_maps.ebv(ra, dec), "ebv")
