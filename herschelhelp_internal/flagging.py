@@ -1,7 +1,7 @@
 import numpy as np
 from astropy import coordinates as coord
 from astropy import units as u
-from astropy.table import Column, Table
+from astropy.table import Column
 
 
 def gaia_flag_column(cat_coords, cat_epoch, gaia_cat):
