@@ -15,7 +15,7 @@ run:
 ```Shell
 $ conda create -n herschelhelp_internal python=3
 $ source activate herschelhelp_internal
-$ conda install  -c openastronomy astropy healpy scipy pymocs seaborn
+$ conda install  -c openastronomy astropy healpy scipy seaborn
 $ pip install -r requirements.txt
 $ python setup.py develop
 ```
