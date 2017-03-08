@@ -300,13 +300,14 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     # Scatter plot of the sources.
     _, axis = plt.subplots()
 
-    color = np.angle(ra_diff.arcsec + dec_diff.arcsec * 1j)
-    size = np.absolute(ra_diff.arcsec + dec_diff.arcsec * 1j)
-    size /= np.max(size) / 100
+    offset_angle = np.angle(ra_diff.arcsec + dec_diff.arcsec * 1j)
+    offset_dist = np.absolute(ra_diff.arcsec + dec_diff.arcsec * 1j)
+    offset_distnorm = (offset_dist - np.min(offset_dist)) / np.max(offset_dist)
 
-    axis.scatter(
-        cat_coords.ra, cat_coords.dec, c=color, s=size, alpha=.5,
-        cmap=mpl.colors.ListedColormap(sns.color_palette("husl", 300))
-    )
+    cmap = mpl.colors.ListedColormap(sns.color_palette("husl", 300))
+    colors = cmap(offset_angle)  # The color is the angle
+    colors[:, 3] = offset_distnorm  # The transparency is the distance
+
+    axis.scatter(cat_coords.ra, cat_coords.dec, c=colors)
     axis.set_xlabel("RA")
     axis.set_ylabel("Dec")
