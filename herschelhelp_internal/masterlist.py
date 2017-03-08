@@ -308,6 +308,6 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     colors = cmap(offset_angle)  # The color is the angle
     colors[:, 3] = offset_distnorm  # The transparency is the distance
 
-    axis.scatter(cat_coords.ra, cat_coords.dec, c=colors)
+    axis.scatter(cat_coords.ra, cat_coords.dec, c=colors, s=15)
     axis.set_xlabel("RA")
     axis.set_ylabel("Dec")
