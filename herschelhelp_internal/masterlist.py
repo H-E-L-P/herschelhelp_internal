@@ -1,5 +1,6 @@
 from collections import Counter
 
+import matplotlib as mpl
 import numpy as np
 import seaborn as sns
 from astropy import units as u
@@ -257,7 +258,8 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     Given catalogue coordinates and reference coordinates (e.g. Gaia), this
     function plots two figures summarising the RA and Dec differences:
     - A joint plot a RA-diff and Dec-diff;
-    - A RA, Dec plot of the catalogue with vectors indicating the differences.
+    - A RA, Dec scatter plot of the catalogue using the angle of the RA-diff,
+      Dec-diff vector pour the colour and its norm for the size of the dots.
 
     This function does not output anything and is intended to be used within
     a notebook to display the figures.
@@ -287,13 +289,24 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     cat_coords = cat_coords[to_keep]
 
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
+    sns.set_style("dark")
 
+    # Joint plot
     jointplot = sns.jointplot(ra_diff.arcsec, dec_diff.arcsec, kind='hex')
     jointplot.set_axis_labels("RA diff. [arcsec]", "Dec diff. [arcsec]")
     jointplot.ax_joint.axhline(0, color='black', linewidth=.5)
     jointplot.ax_joint.axvline(0, color='black', linewidth=.5)
 
-    fig, axis = plt.subplots()
-    axis.quiver(cat_coords.ra, cat_coords.dec, ra_diff, dec_diff)
+    # Scatter plot of the sources.
+    _, axis = plt.subplots()
+
+    color = np.angle(ra_diff.arcsec + dec_diff.arcsec * 1j)
+    size = np.absolute(ra_diff.arcsec + dec_diff.arcsec * 1j)
+    size /= np.max(size) / 100
+
+    axis.scatter(
+        cat_coords.ra, cat_coords.dec, c=color, s=size,
+        cmap=mpl.colors.ListedColormap(sns.color_palette("husl", 300))
+    )
     axis.set_xlabel("RA")
     axis.set_ylabel("Dec")
