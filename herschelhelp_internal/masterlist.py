@@ -305,7 +305,7 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     size /= np.max(size) / 100
 
     axis.scatter(
-        cat_coords.ra, cat_coords.dec, c=color, s=size,
+        cat_coords.ra, cat_coords.dec, c=color, s=size, alpha=.5,
         cmap=mpl.colors.ListedColormap(sns.color_palette("husl", 300))
     )
     axis.set_xlabel("RA")
