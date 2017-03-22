@@ -230,7 +230,7 @@ def inMoc(ra, dec, moc):
     return np.in1d(source_healpix_cells, moc_healpix_cells)
 
 
-def gen_help_id(ra, dec):
+def gen_help_id(ra, dec, base_id=b"HELP_J"):
     """Generate the HELP identifiers for a list of sources
 
     Parameters
@@ -239,6 +239,8 @@ def gen_help_id(ra, dec):
         Right ascensions of the sources in degrees (J2000).
     dec: array of float
         Declinations of the sources in degrees (J2000).
+    base_id: bytes
+        Begining of the identifiers.
 
     Returns
     -------
@@ -257,7 +259,7 @@ def gen_help_id(ra, dec):
     idcol = np.char.replace(idcol, b's ', b'')
     idcol = np.char.replace(idcol, b'd', b'')
     idcol = np.char.replace(idcol, b's', b'')
-    idcol = np.full(idcol.shape, b'HELP_J', dtype=np.object) + idcol
+    idcol = np.full(idcol.shape, base_id, dtype=np.object) + idcol
 
     return Column(data=idcol.astype(np.string_), name="help_id")
 
