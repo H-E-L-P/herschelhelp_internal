@@ -311,3 +311,33 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     axis.scatter(cat_coords.ra, cat_coords.dec, c=colors, s=15)
     axis.set_xlabel("RA")
     axis.set_ylabel("Dec")
+
+
+def nb_merge_dist_plot(main_coords, second_coords, max_dist=10 * u.arcsec):
+    """Create a plot to estimate the radius for merging catalogues.
+
+    This function create a plot presenting the distribution of the distances of
+    the sources represented by second_coords to the sources represented by
+    main_coords.  There should be an over-density of short distances because of
+    matching sources and then the number of sources should grow linearly with
+    the distance.
+
+    This function does not return anything and is intended to be used within
+    a notebook to display a plot.
+
+    Parameters
+    ----------
+    main_coords: astropy.coordinates.SkyCoord
+        The coordinates in the main catalogue.
+    second_coords: astropy.coordinates.SkyCoord
+        The coordinates in the secondary catalogue.
+    max_dist: astropy.units.Quantity
+        Maximal distance to search for counterparts (default to 10
+        arc-seconds).
+
+    """
+    _, _, d2d, _ = main_coords.search_around_sky(second_coords, max_dist)
+
+    sns.distplot(d2d.arcsec)
+    plt.xticks(np.arange(max_dist.value))
+    plt.xlabel("Distance [{}]".format(max_dist.unit))
