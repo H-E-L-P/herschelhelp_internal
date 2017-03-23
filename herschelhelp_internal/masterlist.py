@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 
 import matplotlib as mpl
@@ -7,6 +8,9 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Column, hstack, vstack
 from matplotlib import pyplot as plt
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def remove_duplicates(table, ra_col="ra", dec_col="dec",
@@ -235,6 +239,14 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     # We don't need the positions from the second catalogue anymore.
     both_in_cat_1_and_cat_2.remove_columns([racol_2, decol_2])
 
+    # Logging the number of rows
+    LOGGER.info("There are %s sources only in the first catalogue",
+                len(only_in_cat_1))
+    LOGGER.info("There are %s sources only in the second catalogue",
+                len(only_in_cat_2))
+    LOGGER.info("There are %s sources in both catalogues",
+                len(both_in_cat_1_and_cat_2))
+
     merged_catalogue = vstack([only_in_cat_1, both_in_cat_1_and_cat_2,
                                only_in_cat_2])
 
@@ -313,7 +325,6 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     axis.set_ylabel("Dec")
 
 
-def nb_merge_dist_plot(main_coords, second_coords, max_dist=10 * u.arcsec):
 def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     """Create a plot to estimate the radius for merging catalogues.
 
