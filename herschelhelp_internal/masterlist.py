@@ -314,6 +314,7 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
 
 
 def nb_merge_dist_plot(main_coords, second_coords, max_dist=10 * u.arcsec):
+def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     """Create a plot to estimate the radius for merging catalogues.
 
     This function create a plot presenting the distribution of the distances of
