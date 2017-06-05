@@ -84,13 +84,13 @@ def flux_to_mag(fluxes, errors_on_fluxes=None):
     return magnitudes, errors
 
 
-def aperture_correction(mag_ref, mag_target, stellarity=None, mag_min=None,
+def aperture_correction(mag, mag_target, stellarity=None, mag_min=None,
                         mag_max=None):
     """Compute aperture correction
 
-    Given reference magnitudes and target magnitudes this function computes the
-    aperture correction to apply to the reference to match the targets.  It may
-    optionnaly use a stellarity index and magnitude limits to make the
+    Given some magnitudes and target magnitudes this function computes the
+    aperture correction to apply to the first magnitudes to match the targets.
+    It may optionnaly use a stellarity index and magnitude limits to make the
     computation on a supset of the provided magnitudes.
 
     The computation is done by sigma-clipping the difference of magnitudes at
@@ -98,11 +98,11 @@ def aperture_correction(mag_ref, mag_target, stellarity=None, mag_min=None,
 
     Parameters
     ----------
-    mag_ref: array of floats
-        The reference magnitudes.
+    mag: array of floats
+        The magnitudes to correct.
     mag_target: array of floats
         The target magnitudes. The length of the array must be the same as for
-        mag_ref.
+        mag.
     stellarity: array of floats
         The stellarity of each source. If it is provided, only the sources with
         a stellarity above 0.9 will be used in the computation.
@@ -116,7 +116,7 @@ def aperture_correction(mag_ref, mag_target, stellarity=None, mag_min=None,
     Returns
     -------
     mag_diff: float
-        The magnitude to add to the reference magnitude to match the target.
+        The magnitude to add to the magnitudes to match the targets.
     num: integer
         The number of sources used in the computation.
     std: float
@@ -124,20 +124,22 @@ def aperture_correction(mag_ref, mag_target, stellarity=None, mag_min=None,
 
     """
 
-    mask = ~np.isnan(mag_ref) & ~np.isnan(mag_target)
+    mask = ~np.isnan(mag) & ~np.isnan(mag_target)
     if stellarity is not None:
         mask &= (stellarity > 0.9)
     if mag_min is not None:
-        mask &= (mag_ref >= mag_min)
+        mask &= (mag >= mag_min)
     if mag_max is not None:
-        mask &= (mag_ref <= mag_max)
+        mask &= (mag <= mag_max)
 
     num = mask.sum()
 
     if num == 0:
         raise Exception("Not enough sources!")
 
-    mag_diff = mag_target - mag_ref
+    # As we are looking for the value to add to the magnitudes to match the
+    # target, the difference must be the targets minus the magnitudes.
+    mag_diff = mag_target - mag
 
     _, median, std = sigma_clipped_stats(mag_diff[mask], sigma=3.0, iters=5)
 
@@ -176,8 +178,10 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
     idx, d2d, _ = ref_coords.match_to_catalog_sky(coords)
     to_keep = d2d < max_radius
 
-    ra_diff = (coords[idx].ra - ref_coords.ra)[to_keep]
-    dec_diff = (coords[idx].dec - ref_coords.dec)[to_keep]
+    # As we want the values to be added to match the reference, the difference
+    # must be the reference minus the coordinates.
+    ra_diff = (ref_coords[idx].ra - coords.ra)[to_keep]
+    dec_diff = (ref_coords[idx].dec - coords.dec)[to_keep]
 
     _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
     _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0, iters=5)
