@@ -180,8 +180,8 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
 
     # As we want the values to be added to match the reference, the difference
     # must be the reference minus the coordinates.
-    ra_diff = (ref_coords[idx].ra - coords.ra)[to_keep]
-    dec_diff = (ref_coords[idx].dec - coords.dec)[to_keep]
+    ra_diff = (ref_coords.ra - coords[idx].ra)[to_keep]
+    dec_diff = (ref_coords.dec - coords[idx].dec)[to_keep]
 
     _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
     _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0, iters=5)
