@@ -186,13 +186,6 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
     _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
     _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0, iters=5)
 
-    # We don't correct the astrometry when the difference is lower than
-    # 0.1 arcsec.
-    if abs(delta_ra) < 0.1:
-        delta_ra = 0.
-    if abs(delta_dec) < 0.1:
-        delta_dec = 0.
-
     return delta_ra * u.arcsec, delta_dec * u.arcsec
 
 
