@@ -353,3 +353,35 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     sns.distplot(d2d.arcsec)
     plt.xticks(np.arange(max_dist.value))
     plt.xlabel("Distance [{}]".format(max_dist.unit))
+
+
+def nb_compare_plot(x, y, labels=None):
+    """Create a plot comparing two arrays.
+
+    This function create a simple plot comparing two array with a scatter plot
+    and an x=x line added.abs
+
+    This function does not return anything and is intended to be used within
+    a notebook to display a plot.
+
+    Parameters
+    ----------
+    x: array-like of floats
+        The first value, in X.
+    y: array-like of floats
+        The seccond value, in Y.
+    labels: tuple of strings
+        The labels of the two values.
+    
+    """
+
+    mask = ~(np.isnan(x) | np.isnan(y))
+    min_value = np.nanmin([x[mask], y[mask]])
+    max_value = np.nanmax([x[mask], y[mask]])
+    line_values = np.linspace(min_value, max_value)
+
+    plt.scatter(x, y)
+    plt.plot(line_values, line_values, 'k-')
+    if labels is not None:
+        plt.xlabel(labels[0])
+        plt.ylabel(labels[1])
