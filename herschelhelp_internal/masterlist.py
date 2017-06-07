@@ -375,13 +375,12 @@ def nb_compare_plot(x, y, labels=None):
     
     """
 
-    mask = ~(np.isnan(x) | np.isnan(y))
-    min_value = np.nanmin([x[mask], y[mask]])
-    max_value = np.nanmax([x[mask], y[mask]])
-    line_values = np.linspace(min_value, max_value)
-
-    plt.scatter(x, y)
-    plt.plot(line_values, line_values, 'k-')
+    sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
+    sns.set_style("dark")
+    g = sns.jointplot(x, y, kind='hex')
+    x0, x1 = g.ax_joint.get_xlim()
+    y0, y1 = g.ax_joint.get_ylim()
+    lims = [max(x0, y0), min(x1, y1)]
+    g.ax_joint.plot(lims, lims, ':k', linewidth=1.) 
     if labels is not None:
-        plt.xlabel(labels[0])
-        plt.ylabel(labels[1])
+        g.set_axis_labels(labels[0], labels[1])
