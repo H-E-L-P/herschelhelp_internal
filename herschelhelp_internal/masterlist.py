@@ -8,7 +8,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Column, hstack, vstack
 from matplotlib import pyplot as plt
-
+from scipy.stats import gaussian_kde
 
 LOGGER = logging.getLogger(__name__)
 
@@ -355,7 +355,7 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     plt.xlabel("Distance [{}]".format(max_dist.unit))
 
 
-def nb_compare_plot(x, y, labels=None):
+def nb_compare_plot(x, y, labels=None, threshold=0.01):
     """Create a plot comparing two arrays.
 
     This function create a simple plot comparing two array with a joint plot
@@ -376,17 +376,32 @@ def nb_compare_plot(x, y, labels=None):
 
     """
 
+    # Use only finite values
     mask = np.isfinite(x) & np.isfinite(y)
+    x = np.copy(x[mask])
+    y = np.copy(y[mask])
 
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
     sns.set_style("dark")
 
-    g = sns.jointplot(x[mask], y[mask], kind='hex')
+    g = sns.jointplot(x, y, kind='hex')
 
     x0, x1 = g.ax_joint.get_xlim()
     y0, y1 = g.ax_joint.get_ylim()
     lims = [max(x0, y0), min(x1, y1)]
     g.ax_joint.plot(lims, lims, ':k', linewidth=1.)
+
+    # Plot isolated points only using a subsets on large datasets
+    if len(x) > 5000:
+        idx = np.random.choice(np.arange(len(x)), 5000)
+        x = x[idx]
+        y = y[idx]
+    points = np.vstack([x, y])
+    kde = gaussian_kde(points)
+    density = kde(points)
+    xp = x[density < threshold]
+    yp = y[density < threshold]
+    g.ax_joint.scatter(xp, yp, c='black', marker='.', s=8, alpha=.9)
 
     if labels is not None:
         g.set_axis_labels(labels[0], labels[1])
