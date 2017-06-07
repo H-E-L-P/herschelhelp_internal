@@ -358,8 +358,9 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
 def nb_compare_plot(x, y, labels=None):
     """Create a plot comparing two arrays.
 
-    This function create a simple plot comparing two array with a scatter plot
-    and an x=x line added.abs
+    This function create a simple plot comparing two array with a joint plot
+    and an x=x line added. The comparison is limited to finite value in both
+    arrays.
 
     This function does not return anything and is intended to be used within
     a notebook to display a plot.
@@ -372,15 +373,20 @@ def nb_compare_plot(x, y, labels=None):
         The seccond value, in Y.
     labels: tuple of strings
         The labels of the two values.
-    
+
     """
+
+    mask = np.isfinite(x) & np.isfinite(y)
 
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
     sns.set_style("dark")
-    g = sns.jointplot(x, y, kind='hex')
+
+    g = sns.jointplot(x[mask], y[mask], kind='hex')
+
     x0, x1 = g.ax_joint.get_xlim()
     y0, y1 = g.ax_joint.get_ylim()
     lims = [max(x0, y0), min(x1, y1)]
-    g.ax_joint.plot(lims, lims, ':k', linewidth=1.) 
+    g.ax_joint.plot(lims, lims, ':k', linewidth=1.)
+
     if labels is not None:
         g.set_axis_labels(labels[0], labels[1])
