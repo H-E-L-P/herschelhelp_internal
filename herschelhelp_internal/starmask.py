@@ -5,7 +5,7 @@ import logging
 import numpy as np
 #import seaborn as sns
 from astropy import units as u
-#from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord
 from astropy.table import Table
 #from astropy.io import fits
 from astropy.wcs import WCS
@@ -16,6 +16,7 @@ import pyregion
 
 
 from pymoc import MOC
+#from pymoc.util.catalog import catalog_to_cells
 import healpy as hp
 from scipy.constants import pi
 
@@ -23,7 +24,7 @@ from scipy.constants import pi
 LOGGER = logging.getLogger(__name__)
 
 
-def create_starmask(gaia, target, radius = 10 * u.arcsec):
+def create_holes(gaia, target, radius = 10 * u.arcsec):
     """Create a ds9 region file of circles around every GAIA object
 
     This function loops through every object in GAIA in a given field and writes
@@ -49,19 +50,20 @@ def create_starmask(gaia, target, radius = 10 * u.arcsec):
     
     
     
-    stars = Table.read(gaia)['field', 'ra','dec']
+    stars = Table.read(gaia)['field', 'ra','dec', 'phot_g_mean_mag']
 
     print('There are ' + str(len(stars)) + ' GAIA stars in ' + stars[0]['field'])
     #for star in stars:
-
+    
     #write the ds9regions to file
     f = open(target, 'w+')
     
     for star in stars:
-        f.writelines('circle ' 
-                     + str(star['ra']) + ' ' 
-                     + str(star['dec']) + ' '
-                     + str(radius/u.arcsec) + '"\n')
+        if star['phot_g_mean_mag'] < 16:
+            f.writelines('circle(' 
+                         + str(star['ra']) + ', ' 
+                         + str(star['dec']) + ', '
+                         + str(radius/u.arcsec) + '")\n')
     
 
     f.close()
@@ -69,7 +71,7 @@ def create_starmask(gaia, target, radius = 10 * u.arcsec):
     #return 'starmask written to data/starmask.reg'
     
 
-def reg2moc(region_file, fieldmoc, order = 12):
+def reg2moc(region_file, fieldmoc, target, ra_typ = 0.0, dec_typ = 0.0, order = 12):
     """Convert a ds9 region file into MOC/fits format
     
     This function takes a ds9 region file and converts it to a MOC of given order. 
@@ -94,19 +96,22 @@ def reg2moc(region_file, fieldmoc, order = 12):
     #The code requires an image WCS
     w = WCS("""
 WCSAXES =                    2 / Number of coordinate axes
-CRPIX1  =                240.5 / Pixel coordinate of reference point
-CRPIX2  =                120.5 / Pixel coordinate of reference point
-CDELT1  =               -0.675 / [deg] Coordinate increment at reference point
+CRPIX1  =                0.5 / Pixel coordinate of reference point
+CRPIX2  =                0.5 / Pixel coordinate of reference point
+CDELT1  =                0.675 / [deg] Coordinate increment at reference point
 CDELT2  =                0.675 / [deg] Coordinate increment at reference point
-CUNIT1  = 'deg'                / Units of coordinate increment and value
-CUNIT2  = 'deg'                / Units of coordinate increment and value
-CTYPE1  = 'GLON-AIT'           / galactic longitude, Hammer-Aitoff projection
-CTYPE2  = 'GLAT-AIT'           / galactic latitude, Hammer-Aitoff projection
-CRVAL1  =                  0.0 / [deg] Coordinate value at reference point
-CRVAL2  =                  0.0 / [deg] Coordinate value at reference point
+RADECSYSa= 'ICRS    '           / International Celestial Ref. System
+CUNIT1  = 'deg     '                / Units of coordinate increment and value
+CUNIT2  = 'deg     '                / Units of coordinate increment and value
+CTYPE1  = 'RA---TAN'           / 
+CTYPE2  = 'DEC--TAN'           / 
+CRVAL1  =                  247.0 / [deg] Coordinate value at reference point
+CRVAL2  =                  55.1 / [deg] Coordinate value at reference point
 LONPOLE =                  0.0 / [deg] Native longitude of celestial pole
 LATPOLE = 90.0 / [deg] Native latitude of celestial pole
-""")
+""")#.format(ra,dec) )
+#CTYPE1  = 'RA---TAN'           / galactic longitude, Hammer-Aitoff projection
+#CTYPE2  = 'DEC--TAN'           / galactic latitude, Hammer-Aitoff projection
     
     # The ds9 -> MOC converter
     
@@ -160,8 +165,50 @@ LATPOLE = 90.0 / [deg] Native latitude of celestial pole
     
     # creates new MOC, with the ds9 region taken out OR only keeping the ds9 region
     hp_idx = np.array(hp_idx)
-    MOC(order=order,cells = hp_idx[mask]).write("NEW_MOC_O"+str(order)+".fits")
+    MOC(order=order,cells = hp_idx[mask]).write(target)
+    
+#    
+#def cat2moc(starcatfile,fieldmocfile,radius=10*u.arcsec,order=17):
+#    """Turn a star catalogue directly into a MOC
+#       
+#    Parameters
+#    ----------
+#    starcat: string
+#        Location of ds9 region file.
+#    fieldmoc: string
+#        Location of star catalogue
+#    radius: astropy quantity angle
+#        size of circle to mask
+#    order: int
+#        order of MOC cells to use
+#
+#    Returns
+#    -------
+#    string
+#        Location of produced starmask MOC .fits file.
+#    """
+#    startable = Table.read(starcatfile)
+#    starcat = SkyCoord.guess_from_table(startable)
+#    cells = catalog_to_cells(starcat, radius, order)
+#    fieldmoc = MOC(fieldmocfile)
+#    maskedmoc = fieldmoc.remove
+
+def flag_artefacts(masterlist, starmask):
+    """Take a masterlist and flag sources in artefact producing region of star
+    
+    Parameters
+    ----------
+    masterlist: astropy Table
+        Full list of sources
+    starmask: string
+        Location of starmask
+    """
+    print('function not written yet')
 
 if __name__ == '__main__':
     #create_starmask('data/GAIA_CDFS-SWIRE.fits', 'data/starmask_CDFS-SWIRE.reg')
-    reg2moc('data/starmask_CDFS-SWIRE.reg','data/CDFS-SWIRE_MOC.fits', order=13)
+    reg2moc('data/holes_ELAIS-N1.reg',
+            'data/ELAIS-N1_MOC.fits',
+            'data/holes-ELAIS-N1-O17_MOC.fits',
+            order=17)
+    
