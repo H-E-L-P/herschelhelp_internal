@@ -24,7 +24,11 @@ from scipy.constants import pi
 LOGGER = logging.getLogger(__name__)
 
 
-def create_holes(gaia, target, radius = 10 * u.arcsec):
+def create_holes(gaia, 
+                 target, 
+                 radius = 10 * u.arcsec, 
+                 AB = [np.NaN,np.NaN], 
+                 mag_lim = 16):
     """Create a ds9 region file of circles around every GAIA object
 
     This function loops through every object in GAIA in a given field and writes
@@ -40,6 +44,9 @@ def create_holes(gaia, target, radius = 10 * u.arcsec):
         Location of output region file.
     radius: astropy quantity (distance)
         Radius for considering sources as duplicates.
+    AB: list of two floats
+        Parameters defining hole radius as function of magnitude according to 
+        10**(A + B * m)
 
     Returns
     -------
@@ -59,15 +66,22 @@ def create_holes(gaia, target, radius = 10 * u.arcsec):
     f = open(target, 'w+')
     
     for star in stars:
-        if star['phot_g_mean_mag'] < 16:
+        if star['phot_g_mean_mag'] < 16 and AB ==[np.NaN,np.NaN]:
             f.writelines('circle(' 
                          + str(star['ra']) + ', ' 
                          + str(star['dec']) + ', '
                          + str(radius/u.arcsec) + '")\n')
+        elif star['phot_g_mean_mag'] < mag_lim and AB != [np.NaN,np.NaN]:
+        	#If AB present then define annulus inner 1 arc sec and out r_50 from AB
+            r_50 = (10**(AB[0] + AB[1] * star['phot_g_mean_mag'])) * u.arcsec
+            f.writelines('annulus(' 
+                         + str(star['ra']) + ', ' 
+                         + str(star['dec']) + ', 1.0", '
+                         + str(r_50/u.arcsec) + '")\n')
     
 
     f.close()
-    print( 'Starmask (basic 10 arcsec circles) written to ' + target)
+    print( 'Starmask written to ' + target)
     #return 'starmask written to data/starmask.reg'
     
 
