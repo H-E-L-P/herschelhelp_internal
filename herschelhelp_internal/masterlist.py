@@ -493,12 +493,17 @@ def nb_plot_mag_vs_apcor(mag, mag_target, stellarity):
         the mag parameter.
     stellarity: numpy array of floats
         The stellarity associated to each object.  The length must be the same
-        as the mag parameter.
+        as the mag parameter. Only object with stellarity above 0.9 are used
+        to compute aperture correction.
     """
-    mag_min = np.floor(np.nanmin(mag))
-    mag_max = np.ceil(np.nanmax(mag))
+    mask = stellarity > .9
 
-    mag_bins = np.arange(mag_min, mag_max)
+    # We exclude the 0.1% brighter and fainter sources
+    mag_min, mag_max = np.nanpercentile(mag[mask], [.001, .999])
+    mag_min = np.floor(mag_min)
+    mag_max = np.ceil(mag_max)
+
+    mag_bins = np.arange(mag_min, mag_max, step=.1)
 
     mag_cor = []
     mag_std = []
@@ -506,7 +511,7 @@ def nb_plot_mag_vs_apcor(mag, mag_target, stellarity):
     for mag_bin_min in mag_bins:
         try:
             mag_diff, _, std = aperture_correction(
-                mag, mag_target, stellarity, mag_bin_min, mag_bin_min + 1)
+                mag, mag_target, stellarity, mag_bin_min, mag_bin_min + .1)
         except:
             mag_diff, std = np.nan, np.nan
         mag_cor.append(mag_diff)
