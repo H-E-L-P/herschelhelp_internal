@@ -10,6 +10,8 @@ from astropy.table import Column, hstack, vstack
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
 
+from .utils import aperture_correction
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -406,3 +408,113 @@ def nb_compare_plot(x, y, labels=None, threshold=0.01):
 
     if labels is not None:
         g.set_axis_labels(labels[0], labels[1])
+
+
+def nb_plot_mag_ap_evol(magnitudes, stellarity, stel_threshold=0.9,
+                        labels=None):
+    """Create a plot showing magnitude evolution with aperture.
+
+    This function creates a plot simulating the curve of growth of the
+    magnitude in growing apertures.  Given a bunch of magnitudes in several
+    apertures, it creates a figure with two plots:
+    - The evolution of the mean magnitude in each aperture;
+    - The mean gain (or loss when negative) of magnitude in each aperture
+      compared to the previous.
+
+    This plot is used to find the best target aperture to use when aperture
+    correcting magnitudes.
+
+    This function does not return anything and is intended to be used within
+    a notebook to display a plot.
+
+    Parameters
+    ----------
+    magnitudes: numpy.array of floats
+        The magnitudes in a 2 axis array of floats. The first axis is the
+        aperture and the second axis is the objects.
+    stellarity: array like of floats
+        The stellarity associated to each object, must have the same length as
+        the second axis of the magnitudes parameter.
+    stel_threshold: float
+        Stellarity threshold, we only use point sources with a stellarity index
+        above this threshold.
+    labels: list of strings
+        The label corresponding to each aperture in the aperture axis of the
+        magnitudes parameter.
+    """
+
+    mags = magnitudes[:, stellarity > stel_threshold].copy()
+    mag_diff = mags[1:, :] - mags[:-1, :]
+
+    fig, [ax1, ax2] = plt.subplots(
+        2, 1,
+        sharex=True,
+        gridspec_kw={'hspace': 0},
+        figsize=(9, 12)
+    )
+
+    ax1.plot(np.nanmean(mags, axis=1))
+
+    ax2.plot(1+np.arange(len(mag_diff)),
+             np.nanmean(mag_diff, axis=1))
+    ax2.axhline(0, c='black', linewidth=.5)
+
+    if labels is not None:
+        ax2.xaxis.set_ticks(np.arange(magnitudes.shape[0]))
+        ax2.set_xticklabels(labels)
+        ax2.set_xlabel("Aperture")
+    else:
+        ax2.set_xlabel("Aperture index")
+
+    ax1.set_ylabel("Mean magnitude")
+    ax2.set_ylabel("Mean magnitude gain vs prev. ap.")
+
+
+def nb_plot_mag_vs_apcor(mag, mag_target, stellarity):
+    """Creates a plot of the evolution of ap. correction with aperture.
+
+    This function creates a plot showing the evolution of the aperture
+    correction to be applied - with the associated RMS given by the aperture
+    correction method - for each magnitude bin.  This plot is used to chose the
+    magnitude limits for the objects that will be used to compute aperture
+    correction.  We should use wide limits (to use more objects) where the
+    correction is table with few dispersion.
+
+    This function does not return anything and is intended to be used within
+    a notebook to display a plot.
+
+    Parameters
+    ----------
+    mag: numpy array of floats
+        The magnitudes in the aperture we want to use.
+
+    mag_target: numpy array of floats
+        The magnitudes in the target aperture.  The length must be the same as
+        the mag parameter.
+    stellarity: numpy array of floats
+        The stellarity associated to each object.  The length must be the same
+        as the mag parameter.
+    """
+    mag_min = np.floor(np.nanmin(mag))
+    mag_max = np.ceil(np.nanmax(mag))
+
+    mag_bins = np.arange(mag_min, mag_max)
+
+    mag_cor = []
+    mag_std = []
+
+    for mag_bin_min in mag_bins:
+        try:
+            mag_diff, _, std = aperture_correction(
+                mag, mag_target, stellarity, mag_bin_min, mag_bin_min + 1)
+        except:
+            mag_diff, std = np.nan, np.nan
+        mag_cor.append(mag_diff)
+        mag_std.append(std)
+
+    mag_cor = np.array(mag_cor)
+    mag_std = np.array(mag_std)
+
+    plt.rc('figure', figsize=(9, 4))
+    plt.plot(mag_bins, mag_cor, color='black')
+    plt.fill_between(mag_bins, mag_cor - mag_std, mag_cor + mag_std, alpha=.3)
