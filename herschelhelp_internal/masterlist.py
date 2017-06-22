@@ -394,11 +394,12 @@ def nb_compare_plot(x, y, labels=None, threshold=0.01):
     # Plot isolated points only using a subsets on large datasets
     if len(x) > 5000:
         idx = np.random.choice(np.arange(len(x)), 5000)
-        x = x[idx]
-        y = y[idx]
-    points = np.vstack([x, y])
+        points = np.vstack([x[idx], y[idx]])
+    else:
+        points = np.vstack([x, y])
     kde = gaussian_kde(points)
-    density = kde(points)
+
+    density = kde(np.vstack([x, y]))
     xp = x[density < threshold]
     yp = y[density < threshold]
     g.ax_joint.scatter(xp, yp, c='black', marker='.', s=8, alpha=.9)
