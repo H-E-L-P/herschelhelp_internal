@@ -11,6 +11,8 @@ from astropy import visualization as vz
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
 
+from IPython.display import display
+
 from .utils import aperture_correction
 
 LOGGER = logging.getLogger(__name__)
@@ -409,6 +411,9 @@ def nb_compare_mags(x, y, labels=("x", "y")):
     fig.colorbar(hb, ax=ax2, label="log10(count)")
     ax2.set_xlabel(labels[0])
     ax2.set_ylabel(labels[1])
+
+    display(fig)
+    plt.close()
 
 
 def nb_plot_mag_ap_evol(magnitudes, stellarity, stel_threshold=0.9,
