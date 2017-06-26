@@ -358,7 +358,7 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     plt.xlabel("Distance [{}]".format(max_dist.unit))
 
 
-def nb_compare_maps(x, y, labels=("x", "y")):
+def nb_compare_mags(x, y, labels=("x", "y")):
     """Create plots comparing magnitudes
 
     This function creates two plots to compare two arrays of of associated
