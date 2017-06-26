@@ -398,6 +398,7 @@ def nb_compare_mags(x, y, labels=("x", "y")):
     # Histogram of the difference
     vz.hist(diff, ax=ax1, bins='knuth')
     ax1.set_xlabel(diff_label)
+    ax1.axvline(0, color='black', linestyle=':')
 
     # Hexbin
     hb = ax2.hexbin(x, y, cmap='BuPu', bins="log")
