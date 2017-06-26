@@ -7,6 +7,7 @@ import seaborn.apionly as sns
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Column, hstack, vstack
+from astropy import visualization as vz
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
 
@@ -357,12 +358,12 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     plt.xlabel("Distance [{}]".format(max_dist.unit))
 
 
-def nb_compare_plot(x, y, labels=None, threshold=0.01):
-    """Create a plot comparing two arrays.
+def nb_compare_maps(x, y, labels=("x", "y")):
+    """Create plots comparing magnitudes
 
-    This function create a simple plot comparing two array with a joint plot
-    and an x=x line added. The comparison is limited to finite value in both
-    arrays.
+    This function creates two plots to compare two arrays of of associated
+    magnitude (like the values in two similar bands): the histogram of the
+    differences and a “hexbin” plot of one vs the other.
 
     This function does not return anything and is intended to be used within
     a notebook to display a plot.
@@ -370,9 +371,9 @@ def nb_compare_plot(x, y, labels=None, threshold=0.01):
     Parameters
     ----------
     x: array-like of floats
-        The first value, in X.
+        The array of magnitude.
     y: array-like of floats
-        The seccond value, in Y.
+        The second array of magnitudes, must be the same length of x.
     labels: tuple of strings
         The labels of the two values.
 
@@ -383,31 +384,30 @@ def nb_compare_plot(x, y, labels=None, threshold=0.01):
     x = np.copy(x[mask])
     y = np.copy(y[mask])
 
-    sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
-    sns.set_style("dark")
+    # Difference
+    diff = y - x
 
-    g = sns.jointplot(x, y, kind='hex')
+    x_label, y_label = labels
+    diff_label = "{} - {}".format(y_label, x_label)
 
-    x0, x1 = g.ax_joint.get_xlim()
-    y0, y1 = g.ax_joint.get_ylim()
-    lims = [max(x0, y0), min(x1, y1)]
-    g.ax_joint.plot(lims, lims, ':k', linewidth=1.)
+    print("{} min / max: {} / {}".format(diff_label, np.min(diff),
+                                         np.max(diff)))
 
-    # Plot isolated points only using a subsets on large datasets
-    if len(x) > 5000:
-        idx = np.random.choice(np.arange(len(x)), 5000)
-        points = np.vstack([x[idx], y[idx]])
-    else:
-        points = np.vstack([x, y])
-    kde = gaussian_kde(points)
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(16, 6))
 
-    density = kde(np.vstack([x, y]))
-    xp = x[density < threshold]
-    yp = y[density < threshold]
-    g.ax_joint.scatter(xp, yp, c='black', marker='.', s=8, alpha=.9)
+    # Histogram of the difference
+    vz.hist(diff, ax=ax1, bins='knuth')
+    ax1.set_xlabel(diff_label)
 
-    if labels is not None:
-        g.set_axis_labels(labels[0], labels[1])
+    # Hexbin
+    hb = ax2.hexbin(x, y, cmap='BuPu', bins="log")
+    min_val = np.min(np.r_[x, y])
+    max_val = np.max(np.r_[x, y])
+    ax2.autoscale(False)
+    ax2.plot([min_val, max_val], [min_val, max_val], "k:")
+    fig.colorbar(hb, ax=ax2, label="log10(count)")
+    ax2.set_xlabel(labels[0])
+    ax2.set_ylabel(labels[1])
 
 
 def nb_plot_mag_ap_evol(magnitudes, stellarity, stel_threshold=0.9,
