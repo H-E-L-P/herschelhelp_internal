@@ -3,7 +3,7 @@ from collections import Counter
 
 import matplotlib as mpl
 import numpy as np
-import seaborn as sns
+import seaborn.apionly as sns
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import Column, hstack, vstack
