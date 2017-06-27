@@ -189,6 +189,36 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
     return delta_ra * u.arcsec, delta_dec * u.arcsec
 
 
+def coords_to_hpidx(ra, dec, order):
+    """Convert coordinates to HEALPix indexes
+
+    Given to list of right ascension and declination, this function computes
+    the HEALPix index (in nested scheme) at each position, at the given order.
+
+    Parameters
+    ----------
+    ra: array or list of floats
+        The right ascensions of the sources.
+    dec: array or list of floats
+        The declinations of the sources.
+    order: int
+        HEALPix order.
+
+    Returns
+    -------
+    array of int
+        The HEALPix index at each position.
+
+    """
+    ra, dec = np.array(ra), np.array(dec)
+
+    theta = 0.5 * np.pi - np.radians(dec)
+    phi = np.radians(ra)
+    healpix_idx = hp.ang2pix(2**order, theta, phi, nest=True)
+
+    return healpix_idx
+
+
 def inMoc(ra, dec, moc):
     """Find source position in a MOC
 
@@ -198,7 +228,6 @@ def inMoc(ra, dec, moc):
 
     Parameters
     ----------
-
     ra: array or list of floats
         The right ascensions of the sources.
     dec: array or list of floats
@@ -212,13 +241,9 @@ def inMoc(ra, dec, moc):
         The boolean mask with True for sources that fall inside the MOC.
 
     """
-    ra, dec = np.array(ra), np.array(dec)
-
-    # We compute the HEALpix cell ids of each source at the maximum order of
-    # the MOC.
-    theta = 0.5 * np.pi - np.radians(dec)
-    phi = np.radians(ra)
-    source_healpix_cells = hp.ang2pix(2**moc.order, theta, phi, nest=True)
+    source_healpix_cells = coords_to_hpidx(
+        np.array(ra), np.array(dec), moc.order
+    )
 
     # Array of all the HEALpix cell ids of the MOC at its maximum order.
     moc_healpix_cells = np.array(list(moc.flattened()))
