@@ -529,3 +529,94 @@ def nb_plot_mag_vs_apcor(mag, mag_target, stellarity):
     plt.rc('figure', figsize=(9, 4))
     plt.plot(mag_bins, mag_cor, color='black')
     plt.fill_between(mag_bins, mag_cor - mag_std, mag_cor + mag_std, alpha=.3)
+
+
+def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
+               invert_x=False, invert_y=False):
+    """Generate color-color or color-magnitude plots
+
+    This function is used to create color-color or color-magnitude plots.  It
+    uses the stellarity index to make one hexbin plot for point sources, one
+    for extended sources, and a scatter plot combining the two.
+
+    This function does not return anything and is intended to be used within
+    a notebook to display a plot.
+
+    Parameters
+    ----------
+    x: array-like of floats
+        The color or magnitude displayed in X.
+    y: array-like of floats
+        The color or magnitude displayed in Y.
+    x_label: string
+        The label for X.
+    y_label: string
+        The label for Y.
+    stellarity: array-like of floats
+        The stellarity index. Sources are considered point sources when the
+        stellarity is over 0.7.
+    alpha: float
+        The alpha value of the points in the scatter plot.
+    leg_loc: int
+        The matplotlib position of the legend.
+    invert_x, invert_y: boolean
+        Set to true if you want to invert an axis (e.g. for a magnitude axis).
+
+    """
+    x = np.array(x)
+    y = np.array(y)
+    stellarity = np.array(stellarity)
+
+    # Mask of the sources for which we have information to plot
+    mask = np.isfinite(x) & np.isfinite(y) & np.isfinite(stellarity)
+    print("Number of source used: {} / {} ({:.2f}%)".format(
+        np.sum(mask), len(x), 100 * np.sum(mask)/len(x)))
+
+    # We will zoom to plot to remove outliers
+    x_min, x_max = np.percentile(x[mask], [.1, 99.9])
+    y_min, y_max = np.percentile(y[mask], [.1, 99.9])
+    x_delta = .1 * (x_max - x_min)
+    y_delta = .1 * (y_max - y_min)
+    x_min -= x_delta
+    x_max += x_delta
+    y_min -= y_delta
+    y_max += y_delta
+
+    point_source = stellarity[mask] > 0.7
+
+    plt.figure(figsize=(10, 10), edgecolor="gray")
+
+    ax1 = plt.subplot2grid((2, 4), (0, 0), colspan=2, facecolor="w")
+    ax1.hexbin(x[mask][~point_source], y[mask][~point_source],
+               cmap='Reds', bins="log")
+    ax1.set_xlabel(x_label)
+    ax1.set_ylabel(y_label)
+    ax1.set_title("Extended sources")
+
+    ax2 = plt.subplot2grid((2, 4), (0, 2), colspan=2, sharex=ax1, sharey=ax1,
+                           facecolor='w')
+    ax2.hexbin(x[mask][point_source], y[mask][point_source],
+               cmap='Blues', bins="log")
+    ax2.set_xlabel(x_label)
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    ax2.set_title("Point sources")
+
+    ax3 = plt.subplot2grid((2, 4), (1, 1), colspan=2, sharex=ax1, sharey=ax1)
+    ax3.scatter(x[mask][~point_source], y[mask][~point_source],
+                color='r', marker='v', alpha=alpha, s=1,
+                label="Extended sources")
+    ax3.scatter(x[mask][point_source], y[mask][point_source],
+                color='b', marker='v', alpha=alpha, s=1,
+                label="Point sources")
+    ax3.set_xlabel(x_label)
+    ax3.set_ylabel(y_label)
+    legend = ax3.legend(loc=leg_loc)
+    for lh in legend.legendHandles:
+        lh.set_alpha(1)
+
+    ax3.set_xlim([x_min, x_max])
+    ax3.set_ylim([y_min, y_max])
+    if invert_x:
+        ax3.set_xlim([x_max, x_min])
+    if invert_y:
+        ax3.set_ylim([y_max, y_min])
