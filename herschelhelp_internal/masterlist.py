@@ -403,7 +403,7 @@ def nb_compare_mags(x, y, labels=("x", "y")):
     ax1.axvline(0, color='black', linestyle=':')
 
     # Hexbin
-    hb = ax2.hexbin(x, y, cmap='BuPu', bins="log")
+    hb = ax2.hexbin(x, y, cmap='Oranges', bins="log")
     min_val = np.min(np.r_[x, y])
     max_val = np.max(np.r_[x, y])
     ax2.autoscale(False)
