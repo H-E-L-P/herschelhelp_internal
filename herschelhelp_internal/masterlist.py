@@ -532,7 +532,7 @@ def nb_plot_mag_vs_apcor(mag, mag_target, stellarity):
 
 
 def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
-               invert_x=False, invert_y=False):
+               invert_x=False, invert_y=False, x_limits=None, y_limits=None):
     """Generate color-color or color-magnitude plots
 
     This function is used to create color-color or color-magnitude plots.  It
@@ -561,6 +561,9 @@ def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
         The matplotlib position of the legend.
     invert_x, invert_y: boolean
         Set to true if you want to invert an axis (e.g. for a magnitude axis).
+    x_limits, y_limits: tuple of floats
+        Limits of X and Y axis. If None (default) the plots are zoomed removing
+        the 0.1% outliers and adding 10% space in both ways.
 
     """
     x = np.array(x)
@@ -572,15 +575,21 @@ def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
     print("Number of source used: {} / {} ({:.2f}%)".format(
         np.sum(mask), len(x), 100 * np.sum(mask)/len(x)))
 
-    # We will zoom to plot to remove outliers
-    x_min, x_max = np.percentile(x[mask], [.1, 99.9])
-    y_min, y_max = np.percentile(y[mask], [.1, 99.9])
-    x_delta = .1 * (x_max - x_min)
-    y_delta = .1 * (y_max - y_min)
-    x_min -= x_delta
-    x_max += x_delta
-    y_min -= y_delta
-    y_max += y_delta
+    # We set the plot limits or zoom to remove outliers
+    if x_limits is not None:
+        x_min, x_max = x_limits
+    else:
+        x_min, x_max = np.percentile(x[mask], [.1, 99.9])
+        x_delta = .1 * (x_max - x_min)
+        x_min -= x_delta
+        x_max += x_delta
+    if y_limits is not None:
+        y_min, y_max = y_limits
+    else:
+        y_min, y_max = np.percentile(y[mask], [.1, 99.9])
+        y_delta = .1 * (y_max - y_min)
+        y_min -= y_delta
+        y_max += y_delta
 
     point_source = stellarity[mask] > 0.7
 
