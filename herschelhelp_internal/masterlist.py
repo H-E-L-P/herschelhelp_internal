@@ -278,6 +278,9 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     - A RA, Dec scatter plot of the catalogue using the angle of the RA-diff,
       Dec-diff vector pour the colour and its norm for the size of the dots.
 
+    If there are two many matches between the two catalogues, we only plot
+    a random selection of sources.
+
     This function does not output anything and is intended to be used within
     a notebook to display the figures.
 
@@ -300,6 +303,15 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
 
     idx, d2d, _ = cat_coords.match_to_catalog_sky(ref_coords)
     to_keep = d2d <= radius
+
+    # If there are more than 10,000 matches to keep, we take only 10,000 ones
+    # randomly to make to plot creation faster.
+    nb_to_keep = np.sum(to_keep)
+    if nb_to_keep > 10000:
+        random_mask = np.full(nb_to_keep, False)
+        random_mask[np.random.choice(
+            np.arange(nb_to_keep), 10000, replace=False)] = True
+    to_keep[~random_mask] = False
 
     ra_diff = (cat_coords.ra - ref_coords[idx].ra)[to_keep]
     dec_diff = (cat_coords.dec - ref_coords[idx].dec)[to_keep]
