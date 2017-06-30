@@ -308,10 +308,10 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     # randomly to make to plot creation faster.
     nb_to_keep = np.sum(to_keep)
     if nb_to_keep > 10000:
-        random_mask = np.full(nb_to_keep, False)
+        random_mask = np.full(nb_to_keep, False, dtype=bool)
         random_mask[np.random.choice(
             np.arange(nb_to_keep), 10000, replace=False)] = True
-    to_keep[~random_mask] = False
+        to_keep[~random_mask] = False
 
     ra_diff = (cat_coords.ra - ref_coords[idx].ra)[to_keep]
     dec_diff = (cat_coords.dec - ref_coords[idx].dec)[to_keep]
