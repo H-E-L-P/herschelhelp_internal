@@ -278,7 +278,7 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     - A RA, Dec scatter plot of the catalogue using the angle of the RA-diff,
       Dec-diff vector pour the colour and its norm for the size of the dots.
 
-    If there are two many matches between the two catalogues, we only plot
+    If there are too many matches between the two catalogues, we only plot
     a random selection of sources.
 
     This function does not output anything and is intended to be used within
@@ -351,6 +351,9 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     matching sources and then the number of sources should grow linearly with
     the distance.
 
+    If there are too many matches between the two catalogues, we only plot
+    a random selection of sources.
+
     This function does not return anything and is intended to be used within
     a notebook to display a plot.
 
@@ -366,6 +369,15 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
 
     """
     _, _, d2d, _ = main_coords.search_around_sky(second_coords, max_dist)
+
+    # If there are more than 10,000 matches to keep, we take only 10,000 ones
+    # randomly to make to plot creation faster.
+    nb_matches = len(d2d)
+    if nb_matches > 10000:
+        random_mask = np.full(nb_matches, False, dtype=bool)
+        random_mask[np.random.choice(
+            np.arange(nb_matches), 10000, replace=False)] = True
+        d2d = d2d[random_mask]
 
     sns.distplot(d2d.arcsec)
     plt.xticks(np.arange(max_dist.value))
