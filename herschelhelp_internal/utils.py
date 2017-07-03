@@ -180,7 +180,14 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
 
     # As we want the values to be added to match the reference, the difference
     # must be the reference minus the coordinates.
+
     ra_diff = (ref_coords.ra - coords[idx].ra)[to_keep]
+    # WARNING: The difference betwee two right ascensions can be very large (in
+    # positive or in negative) when comparing two sources around ra=0. As we
+    # are dealing with sources very near, we can make this simple change:
+    ra_diff[ra_diff < -180 * u.deg] += 360 * u.deg
+    ra_diff[ra_diff > 180 * u.deg] -= 360 * u.deg
+
     dec_diff = (ref_coords.dec - coords[idx].dec)[to_keep]
 
     _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
