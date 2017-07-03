@@ -269,7 +269,8 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     return merged_catalogue
 
 
-def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
+def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
+                        limit_nb_points=None):
     """Create a diagnostic plot for astrometry.
 
     Given catalogue coordinates and reference coordinates (e.g. Gaia), this
@@ -277,9 +278,6 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     - A joint plot a RA-diff and Dec-diff;
     - A RA, Dec scatter plot of the catalogue using the angle of the RA-diff,
       Dec-diff vector pour the colour and its norm for the size of the dots.
-
-    If there are too many matches between the two catalogues, we only plot
-    a random selection of sources.
 
     This function does not output anything and is intended to be used within
     a notebook to display the figures.
@@ -296,6 +294,9 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
         The declination of the reference.
     radius: astropy.units.Quantity
         The maximum radius for source associations (default to 0.6 arcsec).
+    limit_nb_points: int
+        If there are too many matches, limit the number of plotted points to
+        a random selection. If None, use all the matches.
 
     """
     cat_coords = SkyCoord(cat_ra, cat_dec)
@@ -304,13 +305,11 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     idx, d2d, _ = cat_coords.match_to_catalog_sky(ref_coords)
     to_keep = d2d <= radius
 
-    # If there are more than 10,000 matches to keep, we take only 10,000 ones
-    # randomly to make to plot creation faster.
-    nb_to_keep = np.sum(to_keep)
-    if nb_to_keep > 10000:
-        random_mask = np.full(nb_to_keep, False, dtype=bool)
+    # We may want to limit the number of points used.
+    if limit_nb_points is not None and np.sum(to_keep) > limit_nb_points:
+        random_mask = np.full(np.sum(to_keep), False, dtype=bool)
         random_mask[np.random.choice(
-            np.arange(nb_to_keep), 10000, replace=False)] = True
+            np.arange(np.sum(to_keep)), limit_nb_points, replace=False)] = True
         to_keep[to_keep][~random_mask] = False
 
     ra_diff = (cat_coords.ra - ref_coords[idx].ra)[to_keep]
