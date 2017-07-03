@@ -314,6 +314,14 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
         to_keep[to_keep][~random_mask] = False
 
     ra_diff = (cat_coords.ra - ref_coords[idx].ra)[to_keep]
+    # If we are around ra = 0, we must add or remove 360° to the difference.
+    # Let's just look for the diffence been inferior to -180 or superior to
+    # 180; that will cover all our use cases.
+    # Note that we might still have problems at ecliptic poles but we have no
+    # fields there.
+    ra_diff[ra_diff < -180 * u.deg] += 360 * u.deg
+    ra_diff[ra_diff > 180 * u.deg] -= 360 * u.deg
+
     dec_diff = (cat_coords.dec - ref_coords[idx].dec)[to_keep]
     cat_coords = cat_coords[to_keep]
 
@@ -337,7 +345,8 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec):
     colors = cmap(offset_angle)  # The color is the angle
     colors[:, 3] = offset_distnorm  # The transparency is the distance
 
-    axis.scatter(cat_coords.ra, cat_coords.dec, c=colors, s=15)
+    axis.scatter(cat_coords.ra.wrap_at(180 * u.deg),
+                 cat_coords.dec, c=colors, s=15)
     axis.set_xlabel("RA")
     axis.set_ylabel("Dec")
 
