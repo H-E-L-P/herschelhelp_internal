@@ -270,7 +270,7 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
 
 
 def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
-                        limit_nb_points=None):
+                        near_ra0=False, limit_nb_points=None):
     """Create a diagnostic plot for astrometry.
 
     Given catalogue coordinates and reference coordinates (e.g. Gaia), this
@@ -278,6 +278,9 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
     - A joint plot a RA-diff and Dec-diff;
     - A RA, Dec scatter plot of the catalogue using the angle of the RA-diff,
       Dec-diff vector pour the colour and its norm for the size of the dots.
+
+    If the coordinates are around the ra=0 separation, set near_ra0 parameter
+    to True.
 
     This function does not output anything and is intended to be used within
     a notebook to display the figures.
@@ -294,6 +297,10 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
         The declination of the reference.
     radius: astropy.units.Quantity
         The maximum radius for source associations (default to 0.6 arcsec).
+    near_ra0: bool
+        Set to True when the coordinates are around the ra=0 limit; the ra will
+        be transformed to be between -180 and 180 to avoid large differences
+        like 359° - 1°. Default to False.
     limit_nb_points: int
         If there are too many matches, limit the number of plotted points to
         a random selection. If None, use all the matches.
@@ -312,17 +319,19 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
             np.arange(np.sum(to_keep)), limit_nb_points, replace=False)] = True
         to_keep[to_keep][~random_mask] = False
 
-    ra_diff = (cat_coords.ra - ref_coords[idx].ra)[to_keep]
-    # If we are around ra = 0, we must add or remove 360° to the difference.
-    # Let's just look for the diffence been inferior to -180 or superior to
-    # 180; that will cover all our use cases.
-    # Note that we might still have problems at ecliptic poles but we have no
-    # fields there.
-    ra_diff[ra_diff < -180 * u.deg] += 360 * u.deg
-    ra_diff[ra_diff > 180 * u.deg] -= 360 * u.deg
+    # Use ra between -180 and 180 when around ra=0
+    if near_ra0:
+        cat_ra = cat_coords.ra.wrap_at(180 * u.deg)[to_keep]
+        ref_ra = ref_coords[idx].ra.wrap_at(180 * u.deg)[to_keep]
+    else:
+        cat_ra = cat_coords.ra[to_keep]
+        ref_ra = ref_coords[idx].ra[to_keep]
 
-    dec_diff = (cat_coords.dec - ref_coords[idx].dec)[to_keep]
-    cat_coords = cat_coords[to_keep]
+    cat_dec = cat_coords.dec[to_keep]
+    ref_dec = ref_coords[idx].dec[to_keep]
+
+    ra_diff = cat_ra - ref_ra
+    dec_diff = cat_dec - ref_dec
 
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
     sns.set_style("dark")
@@ -344,8 +353,7 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
     colors = cmap(offset_angle)  # The color is the angle
     colors[:, 3] = offset_distnorm  # The transparency is the distance
 
-    axis.scatter(cat_coords.ra.wrap_at(180 * u.deg),
-                 cat_coords.dec, c=colors, s=15)
+    axis.scatter(cat_ra, cat_dec, c=colors, s=15)
     axis.set_xlabel("RA")
     axis.set_ylabel("Dec")
 

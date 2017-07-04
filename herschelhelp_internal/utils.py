@@ -149,12 +149,16 @@ def aperture_correction(mag, mag_target, stellarity=None, mag_min=None,
     return median, num, std
 
 
-def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
+def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec,
+                           near_ra0=False):
     """Compute the offset between coordinates and reference
 
     This function compute the RA, Dec offsets between a list of coordinates and
     the list of reference coordinates.  This is used for correcting the
     astrometry of a catalogue with respect to a reference catalogue.
+
+    If the coordinates are around the ra=0 separation, set near_ra0 parameter
+    to True.
 
     Parameters
     ----------
@@ -164,6 +168,10 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
         The coordinates of the reference catalogue.
     max_radius: quantity
         Maximum radius to look for counterparts.
+    near_ra0: bool
+        Set to True when the coordinates are around the ra=0 limit; the ra will
+        be transformed to be between -180 and 180 to avoid large differences
+        like 359° - 1°. Default to False.
 
     Returns
     -------
@@ -178,17 +186,20 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec):
     idx, d2d, _ = ref_coords.match_to_catalog_sky(coords)
     to_keep = d2d < max_radius
 
+    if near_ra0:
+        ra = coords[idx].ra.wrap_at(180 * u.deg)[to_keep]
+        ref_ra = ref_coords.ra.wrap_at(180 * u.deg)[to_keep]
+    else:
+        ra = coords[idx].ra[to_keep]
+        ref_ra = ref_coords.ra[to_keep]
+
+    dec = coords[idx].dec[to_keep]
+    ref_dec = ref_coords.dec[to_keep]
+
     # As we want the values to be added to match the reference, the difference
     # must be the reference minus the coordinates.
-
-    ra_diff = (ref_coords.ra - coords[idx].ra)[to_keep]
-    # WARNING: The difference betwee two right ascensions can be very large (in
-    # positive or in negative) when comparing two sources around ra=0. As we
-    # are dealing with sources very near, we can make this simple change:
-    ra_diff[ra_diff < -180 * u.deg] += 360 * u.deg
-    ra_diff[ra_diff > 180 * u.deg] -= 360 * u.deg
-
-    dec_diff = (ref_coords.dec - coords[idx].dec)[to_keep]
+    ra_diff = ref_ra - ra
+    dec_diff = ref_dec - dec
 
     _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
     _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0, iters=5)
