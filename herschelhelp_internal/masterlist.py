@@ -358,7 +358,8 @@ def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
     axis.set_ylabel("Dec")
 
 
-def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
+def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
+                       limit_nb_points=None):
     """Create a plot to estimate the radius for merging catalogues.
 
     This function create a plot presenting the distribution of the distances of
@@ -366,9 +367,6 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     main_coords.  There should be an over-density of short distances because of
     matching sources and then the number of sources should grow linearly with
     the distance.
-
-    If there are too many matches between the two catalogues, we only plot
-    a random selection of sources.
 
     This function does not return anything and is intended to be used within
     a notebook to display a plot.
@@ -382,17 +380,18 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec):
     max_dist: astropy.units.Quantity
         Maximal distance to search for counterparts (default to 10
         arc-seconds).
+    limit_nb_points: int
+        If there are too many matches, limit the number of plotted points to
+        a random selection. If None, use all the matches.
 
     """
     _, _, d2d, _ = main_coords.search_around_sky(second_coords, max_dist)
 
-    # If there are more than 10,000 matches to keep, we take only 10,000 ones
-    # randomly to make to plot creation faster.
-    nb_matches = len(d2d)
-    if nb_matches > 10000:
-        random_mask = np.full(nb_matches, False, dtype=bool)
+    # We may want to limit the number of points used.
+    if limit_nb_points is not None and len(d2d) > limit_nb_points:
+        random_mask = np.full(len(d2d), False, dtype=bool)
         random_mask[np.random.choice(
-            np.arange(nb_matches), 10000, replace=False)] = True
+            np.arange(len(d2d)), limit_nb_points, replace=False)] = True
         d2d = d2d[random_mask]
 
     sns.distplot(d2d.arcsec)
