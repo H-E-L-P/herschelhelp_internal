@@ -696,7 +696,7 @@ def nb_histograms(table, column_names, labels=None):
     fig, ax = plt.subplots()
 
     for name, label in zip(column_names, labels):
-        mask = ~np.isnan(table[name])
+        mask = np.isfinite(table[name])
         vz.hist(table[name][mask], bins='scott', label=label, alpha=.5)
 
     ax.legend()
