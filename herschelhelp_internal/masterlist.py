@@ -668,3 +668,37 @@ def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
         ax3.set_xlim([x_max, x_min])
     if invert_y:
         ax3.set_ylim([y_max, y_min])
+
+
+def nb_histograms(table, column_names, labels=None):
+    """Plot histograms of table columns
+
+    This function plots histograms of columns in an astropy table on the same
+    figure.
+
+    This function does not return anything and is intended to be used within
+    a notebook to display a plot.
+
+    Parameters
+    ----------
+    table: astropy.table.Table
+        The astropy table.
+    column_names: list of strings
+        The name of the columns for which an histogram will be plotted.
+    labels: list of strings
+        If provided, the label to use for each histogram.
+
+    """
+
+    if labels is None:
+        labels = column_names
+
+    fig, ax = plt.subplots()
+
+    for name, label in zip(column_names, labels):
+        mask = ~np.isnan(table[name])
+        vz.hist(table[name][mask], bins='scott', label=label, alpha=.5)
+
+    ax.legend()
+    display(fig)
+    plt.close()
