@@ -74,9 +74,9 @@ def create_holes(gaia,
         elif star['phot_g_mean_mag'] < mag_lim and AB != [np.NaN,np.NaN]:
         	#If AB present then define annulus inner 1 arc sec and out r_50 from AB
             r_50 = (10**(AB[0] + AB[1] * star['phot_g_mean_mag'])) * u.arcsec
-            f.writelines('annulus(' 
+            f.writelines('circle(' 
                          + str(star['ra']) + ', ' 
-                         + str(star['dec']) + ', 1.0", '
+                         + str(star['dec']) + ', ' # 1.0", '
                          + str(r_50/u.arcsec) + '")\n')
     
 

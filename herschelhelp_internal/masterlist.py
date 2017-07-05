@@ -5,7 +5,7 @@ import matplotlib as mpl
 import numpy as np
 import seaborn.apionly as sns
 from astropy import units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Column, hstack, vstack
 from astropy import visualization as vz
 from matplotlib import pyplot as plt
@@ -394,9 +394,12 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
             np.arange(len(d2d)), limit_nb_points, replace=False)] = True
         d2d = d2d[random_mask]
 
-    sns.distplot(d2d.arcsec)
-    plt.xticks(np.arange(max_dist.value))
-    plt.xlabel("Distance [{}]".format(max_dist.unit))
+    if isinstance(d2d, Angle):
+        sns.distplot(d2d.arcsec)
+        plt.xticks(np.arange(max_dist.value))
+        plt.xlabel("Distance [{}]".format(max_dist.unit))
+    else:
+        print('There were not any cross matches. The two surveys probably do not overlap.')
 
 
 def nb_compare_mags(x, y, labels=("x", "y")):
