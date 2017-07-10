@@ -431,18 +431,28 @@ def nb_compare_mags(x, y, labels=("x", "y")):
     # Difference
     diff = y - x
 
+    # Median, Median absolute deviation and 1% and 99% percentiles
+    diff_median = np.median(diff)
+    diff_mad = np.median(np.abs(diff - diff_median))
+    diff_1p, diff_99p = np.percentile(diff, [1., 99.])
+
     x_label, y_label = labels
     diff_label = "{} - {}".format(y_label, x_label)
 
-    print("{} min / max: {} / {}".format(diff_label, np.min(diff),
-                                         np.max(diff)))
+    print("{}:".format(diff_label))
+    print("- Median: {:.2f}".format(diff_median))
+    print("- Median Absolute Deviation: {:.2f}".format(diff_mad))
+    print("- 1% percentile: {}".format(diff_1p))
+    print("- 99% percentile: {}".format(diff_99p))
 
     fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(16, 6))
 
     # Histogram of the difference
     vz.hist(diff, ax=ax1, bins='knuth')
     ax1.set_xlabel(diff_label)
-    ax1.axvline(0, color='black', linestyle=':')
+    ax1.axvline(0, color='black', linestyle='--')
+    ax1.axvline(diff_1p, color='grey', linestyle=':')
+    ax1.axvline(diff_99p, color='grey', linestyle=':')
 
     # Hexbin
     hb = ax2.hexbin(x, y, cmap='Oranges', bins="log")
