@@ -399,7 +399,7 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
         plt.xticks(np.arange(max_dist.value))
         plt.xlabel("Distance [{}]".format(max_dist.unit))
     else:
-        print('There were not any cross matches. The two surveys probably do not overlap.')
+        print(""" There weren't any cross matches. The two surveys probably don't overlap.""")
 
 
 def nb_compare_mags(x, y, labels=("x", "y")):
