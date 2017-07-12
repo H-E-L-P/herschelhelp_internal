@@ -434,38 +434,44 @@ def nb_compare_mags(x, y, labels=("x", "y")):
     # Median, Median absolute deviation and 1% and 99% percentiles
     diff_median = np.median(diff)
     diff_mad = np.median(np.abs(diff - diff_median))
-    diff_1p, diff_99p = np.percentile(diff, [1., 99.])
+    try:
+        diff_1p, diff_99p = np.percentile(diff, [1., 99.])
+    except:
+        diff_1p, diff_99p = np.nan, np.nan
 
-    x_label, y_label = labels
-    diff_label = "{} - {}".format(y_label, x_label)
+    if ~np.isnan(diff_median):
+        x_label, y_label = labels
+        diff_label = "{} - {}".format(y_label, x_label)
 
-    print("{}:".format(diff_label))
-    print("- Median: {:.2f}".format(diff_median))
-    print("- Median Absolute Deviation: {:.2f}".format(diff_mad))
-    print("- 1% percentile: {}".format(diff_1p))
-    print("- 99% percentile: {}".format(diff_99p))
+        print("{}:".format(diff_label))
+        print("- Median: {:.2f}".format(diff_median))
+        print("- Median Absolute Deviation: {:.2f}".format(diff_mad))
+        print("- 1% percentile: {}".format(diff_1p))
+        print("- 99% percentile: {}".format(diff_99p))
 
-    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(16, 6))
+        fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(16, 6))
 
-    # Histogram of the difference
-    vz.hist(diff, ax=ax1, bins='knuth')
-    ax1.set_xlabel(diff_label)
-    ax1.axvline(0, color='black', linestyle='--')
-    ax1.axvline(diff_1p, color='grey', linestyle=':')
-    ax1.axvline(diff_99p, color='grey', linestyle=':')
+        # Histogram of the difference
+        vz.hist(diff, ax=ax1, bins='knuth')
+        ax1.set_xlabel(diff_label)
+        ax1.axvline(0, color='black', linestyle='--')
+        ax1.axvline(diff_1p, color='grey', linestyle=':')
+        ax1.axvline(diff_99p, color='grey', linestyle=':')
 
-    # Hexbin
-    hb = ax2.hexbin(x, y, cmap='Oranges', bins="log")
-    min_val = np.min(np.r_[x, y])
-    max_val = np.max(np.r_[x, y])
-    ax2.autoscale(False)
-    ax2.plot([min_val, max_val], [min_val, max_val], "k:")
-    fig.colorbar(hb, ax=ax2, label="log10(count)")
-    ax2.set_xlabel(labels[0])
-    ax2.set_ylabel(labels[1])
+        # Hexbin
+        hb = ax2.hexbin(x, y, cmap='Oranges', bins="log")
+        min_val = np.min(np.r_[x, y])
+        max_val = np.max(np.r_[x, y])
+        ax2.autoscale(False)
+        ax2.plot([min_val, max_val], [min_val, max_val], "k:")
+        fig.colorbar(hb, ax=ax2, label="log10(count)")
+        ax2.set_xlabel(labels[0])
+        ax2.set_ylabel(labels[1])
 
-    display(fig)
-    plt.close()
+        display(fig)
+        plt.close()
+    else:
+        print('HELP warning: No aperture magnitudes in one or both bands:' + labels)
 
 
 def nb_plot_mag_ap_evol(magnitudes, stellarity, stel_threshold=0.9,
@@ -710,7 +716,10 @@ def nb_histograms(table, column_names, labels=None):
 
     for name, label in zip(column_names, labels):
         mask = np.isfinite(table[name])
-        vz.hist(table[name][mask], bins='scott', label=label, alpha=.5)
+        if not (np.count_nonzero(~np.isnan(table[name])) == 0):
+            vz.hist(table[name][mask], bins='scott', label=label, alpha=.5)
+        else:
+            print("HELP warning: One or more of the columns is empty.")
 
     ax.legend()
     display(fig)
