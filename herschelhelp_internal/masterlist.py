@@ -68,6 +68,7 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
 
     if sort_col is not None:
         table.sort(sort_col)
+        table.
 
     if reverse:
         table.reverse()
@@ -399,7 +400,8 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
         plt.xticks(np.arange(max_dist.value))
         plt.xlabel("Distance [{}]".format(max_dist.unit))
     else:
-        print(""" There weren't any cross matches. The two surveys probably don't overlap.""")
+        print("There weren't any cross matches. The two surveys probably "
+              "don't overlap.")
 
 
 def nb_compare_mags(x, y, labels=("x", "y")):
