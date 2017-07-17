@@ -68,7 +68,7 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
 
     if sort_col is not None:
         table.sort(sort_col)
-        table.
+        
 
     if reverse:
         table.reverse()
