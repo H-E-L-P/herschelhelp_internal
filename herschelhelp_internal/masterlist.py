@@ -30,8 +30,8 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
     duplicates.
 
     Note that the duplicate removing percolates.  If A is close enough to B and
-    B close enough to C, B and C will be removed, even if A is far enough from
-    B.
+    B close enough to C, B and C will be removed, even if A is far enough
+    from C.
 
     A flag column is added to the table containing True for sources that where
     associated to other ones during the cleaning.
@@ -68,7 +68,7 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
 
     if sort_col is not None:
         table.sort(sort_col)
-        
+
 
     if reverse:
         table.reverse()
