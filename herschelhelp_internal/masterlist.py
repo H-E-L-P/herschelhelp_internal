@@ -1,5 +1,6 @@
 import logging
 from collections import Counter
+from itertools import product
 
 import matplotlib as mpl
 import numpy as np
@@ -69,7 +70,6 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
     if sort_col is not None:
         table.sort(sort_col)
 
-
     if reverse:
         table.reverse()
 
@@ -105,6 +105,133 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
     keep_idx = np.in1d(np.arange(len(table)), remove_idx, invert=True)
 
     return table[keep_idx]
+
+
+def remove_duplicates_tiled(table, ra_col="ra", dec_col="dec",
+                            radius=0.4*u.arcsec, sort_col=None, reverse=False,
+                            flag_name="flag_cleaned", near_ra0=False,
+                            tile_side=1):
+    """Remove duplicates from a large catalogue
+
+    This function removes the duplicates from a catalogue too large to be
+    treated by the remove_duplicates function.  It works dividing the catalogue
+    in tiles processed separately and merges back the results.
+
+    There is a near_ra0 parameter to be set to True when the catalogue overlaps
+    the ra=0 meridian.
+
+    Parameters
+    ----------
+    table: astropy.table.Table
+        The catalogue to remove duplicates from.
+    ra_col: string
+        Name of the right ascension column. This column must contain decimal
+        degrees.
+    dec_col: string
+        Name of the declination column. This column must contain decimal
+        degrees.
+    radius: astropy quantity (distance)
+        Radius for considering sources as duplicates.
+    sort_col: list of strings
+        If given, the catalogue will be sorted by these columns (ascending)
+        before removing the duplicates. Only the first row will be taken.
+    reverse: boolean
+        If true, the sorted table will also be reversed.
+    flag_name: string
+        Name of the column containing the duplication flag to add to the
+        catalogue.
+    near_ra0: boolean
+        Set to True when the catalogue overlaps the ra=0 meridian.
+        Default: False.
+    tile_side: float
+        Side length of the tile we are dividing the catalogue into for
+        processing, in degree. Default: 1.
+
+    Returns
+    -------
+    astropy.table.Table
+        A new table with the duplicated sources removed and the flag column
+        added.
+    """
+
+    def _get_coordinates(table, ra_col, dec_col, near_ra0):
+        """Function to get the coordinates from a table returning right
+        ascension between -180 and 180 when around ra=0"""
+        coords = SkyCoord(table[ra_col], table[dec_col])
+        dec = coords.dec.value
+        if near_ra0:
+            ra = coords.ra.wrap_at(180 * u.deg).value
+        else:
+            ra = coords.ra.value
+        return ra, dec
+
+    # Position must be given in degrees
+    table[ra_col].unit = u.deg
+    table[dec_col].unit = u.deg
+
+    cat_ra, cat_dec = _get_coordinates(table, ra_col, dec_col, near_ra0)
+
+    cat_ra_min, cat_ra_max = np.percentile(cat_ra, [0., 100.])
+    cat_dec_min, cat_dec_max = np.percentile(cat_dec, [0., 100.])
+
+    cat_ra_width = cat_ra_max - cat_ra_min
+    cat_dec_width = cat_dec_max - cat_dec_min
+
+    # Number of tiles in the ra and dec directions
+    nb_tiles_ra, nb_tiles_dec = np.ceil(
+        [cat_ra_width/tile_side, cat_dec_width/tile_side]).astype(int)
+    LOGGER.info("The catalogue is divided in %i x %i (RA, Dec) tiles",
+                nb_tiles_ra, nb_tiles_dec)
+
+    result_table = None
+
+    for idx_tile_ra, idx_tile_dec in product(range(nb_tiles_ra),
+                                             range(nb_tiles_dec)):
+        tile_ra_min = cat_ra_min + idx_tile_ra * tile_side
+        tile_ra_max = tile_ra_min + tile_side
+        tile_dec_min = cat_dec_min + idx_tile_dec * tile_side
+        tile_dec_max = tile_dec_min + tile_side
+
+        LOGGER.info("Processing RA between %f and %f, and Dec between %f "
+                    "and %f", tile_ra_min, tile_ra_max, tile_dec_min,
+                    tile_dec_max)
+
+        # As we are cleaning objects based on their surrounding, we must add
+        # a margin to the tiles we are processing.  We use a margin of
+        # 3 arc-second i.e. 0.05°.
+        tile_mask = (cat_ra >= tile_ra_min - 0.05) & \
+                    (cat_ra <= tile_ra_max + 0.05) & \
+                    (cat_dec >= tile_dec_min - 0.05) & \
+                    (cat_dec <= tile_dec_max + 0.05)
+
+        tmp_result = remove_duplicates(table[tile_mask], ra_col=ra_col,
+                                       dec_col=dec_col, radius=radius,
+                                       sort_col=sort_col, reverse=reverse,
+                                       flag_name=flag_name)
+
+        # From this result, we must only keep the sources that are strictly
+        # inside the tile, we keep only the right/top border of the tile
+        # except for the first tiles in the row/column.
+        tmp_ra, tmp_dec = _get_coordinates(tmp_result, ra_col, dec_col,
+                                           near_ra0)
+        if idx_tile_ra == 0:
+            tmp_tile_mask = (tmp_ra >= tile_ra_min) & (tmp_ra <= tile_ra_max)
+        else:
+            tmp_tile_mask = (tmp_ra > tile_ra_min) & (tmp_ra <= tile_ra_max)
+
+        if idx_tile_dec == 0:
+            tmp_tile_mask &= (tmp_dec >= tile_dec_min) & \
+                             (tmp_dec <= tile_dec_max)
+        else:
+            tmp_tile_mask &= (tmp_dec > tile_dec_min) & \
+                             (tmp_dec <= tile_dec_max)
+
+        if result_table is None:
+            result_table = tmp_result[tmp_tile_mask]
+        else:
+            result_table = vstack([result_table, tmp_result[tmp_tile_mask]])
+
+    return result_table
 
 
 def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
