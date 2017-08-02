@@ -119,11 +119,11 @@ CUNIT1  = 'deg     '                / Units of coordinate increment and value
 CUNIT2  = 'deg     '                / Units of coordinate increment and value
 CTYPE1  = 'RA---TAN'           / 
 CTYPE2  = 'DEC--TAN'           / 
-CRVAL1  =                  247.0 / [deg] Coordinate value at reference point
-CRVAL2  =                  55.1 / [deg] Coordinate value at reference point
+CRVAL1  =                  {} / [deg] Coordinate value at reference point
+CRVAL2  =                  {} / [deg] Coordinate value at reference point
 LONPOLE =                  0.0 / [deg] Native longitude of celestial pole
 LATPOLE = 90.0 / [deg] Native latitude of celestial pole
-""")#.format(ra,dec) )
+""".format(ra_typ,dec_typ) )
 #CTYPE1  = 'RA---TAN'           / galactic longitude, Hammer-Aitoff projection
 #CTYPE2  = 'DEC--TAN'           / galactic latitude, Hammer-Aitoff projection
     

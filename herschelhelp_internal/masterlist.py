@@ -633,7 +633,10 @@ def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
     mask = np.isfinite(x) & np.isfinite(y) & np.isfinite(stellarity)
     print("Number of source used: {} / {} ({:.2f}%)".format(
         np.sum(mask), len(x), 100 * np.sum(mask)/len(x)))
-
+    
+    if np.sum(mask) == 0:
+        print('HELP warning: no sources with observations in both bands')
+        return
     # We set the plot limits or zoom to remove outliers
     if x_limits is not None:
         x_min, x_max = x_limits
