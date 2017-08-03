@@ -20,12 +20,15 @@ from pymoc import MOC
 import healpy as hp
 from scipy.constants import pi
 
+from .utils import inMoc
+
 
 LOGGER = logging.getLogger(__name__)
 
 
 def create_holes(gaia, 
-                 target, 
+                 out_file, 
+                 region_moc_file,
                  radius = 10 * u.arcsec, 
                  AB = [np.NaN,np.NaN], 
                  mag_lim = 16):
@@ -40,8 +43,10 @@ def create_holes(gaia,
     ----------
     gaia: string
         Location of the fits table of GAIA objects in the target field.
-    target: string
+    out_file: string
         Location of output region file.
+    region_moc_file: string
+        Location of MOC describing region to generate holes in.
     radius: astropy quantity (distance)
         Radius for considering sources as duplicates.
     AB: list of two floats
@@ -60,12 +65,16 @@ def create_holes(gaia,
     stars = Table.read(gaia)['field', 'ra','dec', 'phot_g_mean_mag']
 
     print('There are ' + str(len(stars)) + ' GAIA stars in ' + stars[0]['field'])
-    #for star in stars:
+
+    region_moc = MOC(filename = region_moc_file)
     
     #write the ds9regions to file
-    f = open(target, 'w+')
+    f = open(out_file, 'w+')
     
     for star in stars:
+        if not inMoc(star['ra'],star['dec'],region_moc):
+            continue
+            
         if star['phot_g_mean_mag'] < 16 and AB ==[np.NaN,np.NaN]:
             f.writelines('circle(' 
                          + str(star['ra']) + ', ' 
@@ -81,7 +90,7 @@ def create_holes(gaia,
     
 
     f.close()
-    print( 'Starmask written to ' + target)
+    print( 'Starmask written to ' + out_file)
     #return 'starmask written to data/starmask.reg'
     
 
