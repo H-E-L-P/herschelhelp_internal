@@ -7,7 +7,7 @@ import numpy as np
 import seaborn.apionly as sns
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
-from astropy.table import Column, hstack, vstack
+from astropy.table import Column, hstack, Table, vstack
 from astropy import visualization as vz
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
@@ -397,6 +397,95 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     return merged_catalogue
 
 
+def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
+    """Create the spec-z columns to be added to a catalogue.
+
+    This function cross-match a catalogue with a spec-z catalogue and generate
+    the spec-z columns that should be added to it.
+
+    Parameters
+    ----------
+    catalogue: astropy.table.Table
+        The table containing the catalogue.  It must contain a ‘ra’ and ‘dec’
+        columns with the position in decimal degree.  It must also contains an
+        ‘help_id’ column containing the identifiers.
+    specz: astropy.table.Table
+        The table containing the specz catalogue from HELP.
+    radius: astropy.units.quantity.Quantity
+        The radius to look for counterparts.  When more than one counterpart is
+        found, the corresponding sources will be flagged.
+
+    Return
+    ------
+    col_zspec: astropy.table.Column
+        Table column named zspec containing the spectroscopic redshift of each
+        catalogue source, np.nan where no value.
+    col_zqual: astropy.table.Column
+        Table column named zspec_zqual containing the quality flag associated
+        to each redshift, -99 where no value.
+    col_zflag: astropy.table.Column
+        Table column name zspec_association_flag containing a boolean flag
+        indicating the spec-z association that may be problematic because the
+        spec-z row could be associated to another source in the catalogue with
+        the given radius.
+    association_table: astropy.table.Table
+        Table with two column “help_id” and “specz_id” associating the HELP
+        sources to the corresponding spec-z row.
+
+    """
+    cat_coords = SkyCoord(catalogue['ra'].data * u.deg,
+                          catalogue['dec'].data * u.deg)
+    specz_coords = SkyCoord(specz['ra'].data * u.deg,
+                            specz['dec'].data * u.deg)
+
+    idx_cat, idx_specz, d2d, _ = specz_coords.search_around_sky(
+        cat_coords, radius)
+
+    # We sort the three array by increasing d2d
+    sort_idx = np.argsort(d2d)
+    idx_cat = idx_cat[sort_idx]
+    idx_specz = idx_specz[sort_idx]
+    d2d = d2d[sort_idx]
+
+    # We want to flag as possible mis-associations the spec-z that may be
+    # associated to different sources with the given radius.
+    idx_specz_toflag = np.unique(
+        [item for item, count in Counter(idx_specz).items() if count > 1]
+    )
+
+    # We keep only the first association of a spec-z to a source
+    _, unique_idx = np.unique(idx_specz, return_index=True)
+    idx_cat = idx_cat[unique_idx]
+    idx_specz = idx_specz[unique_idx]
+
+    # We create empty columns to be added to the catalogue and take the value
+    # from the associations between the catalogue and the spec-z table.
+    col_zspec = Column(
+        data=np.full(len(catalogue), np.nan),
+        name="zspec"
+    )
+    col_zspec[idx_cat] = specz['z_spec'][idx_specz]
+
+    col_zqual = Column(
+        data=np.full(len(catalogue), -99, dtype=int),
+        name="zspec_qual"
+    )
+    col_zqual[idx_cat] = specz['z_qual'][idx_specz]
+
+    col_zflag = Column(
+        data=np.full(len(catalogue), False, dtype=bool),
+        name="zspec_assocation_flag"
+    )
+    col_zflag[idx_cat] = np.in1d(idx_specz, idx_specz_toflag)
+
+    # Table associating HELP indices to the Specz indices
+    association_table = Table(
+        [catalogue['help_id'][idx_cat], specz['specz_id'][idx_specz]]
+    )
+
+    return col_zspec, col_zqual, col_zflag, association_table
+
+
 def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
                         near_ra0=False, limit_nb_points=None):
     """Create a diagnostic plot for astrometry.
@@ -760,7 +849,7 @@ def nb_ccplots(x, y, x_label, y_label, stellarity, alpha=0.01, leg_loc=4,
     mask = np.isfinite(x) & np.isfinite(y) & np.isfinite(stellarity)
     print("Number of source used: {} / {} ({:.2f}%)".format(
         np.sum(mask), len(x), 100 * np.sum(mask)/len(x)))
-    
+
     if np.sum(mask) == 0:
         print('HELP warning: no sources with observations in both bands')
         return
