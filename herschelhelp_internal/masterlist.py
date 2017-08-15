@@ -438,7 +438,6 @@ def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
     sort_idx = np.argsort(d2d)
     idx_cat = idx_cat[sort_idx]
     idx_specz = idx_specz[sort_idx]
-    d2d = d2d[sort_idx]
 
     # We want to flag as possible mis-associations the spec-z that may be
     # associated to different sources with the given radius.
