@@ -400,15 +400,20 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
 def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
     """Create the spec-z columns to be added to a catalogue.
 
-    This function cross-match a catalogue with a spec-z catalogue and generate
-    the spec-z columns that should be added to it.
+    This function cross-match a catalogue with the HELP spectroscopic redshift
+    catalogue and add some spec-z columns to the first catalogue:
+
+    - specz_id: identifier in the HELP spec-z catalogue,
+    - zspec: spectroscopic redshift;
+    - zspec_qual: quality flag;
+    - zspec_flag: boolean flag that is true when there is a possible
+        mis-association.
 
     Parameters
     ----------
     catalogue: astropy.table.Table
         The table containing the catalogue.  It must contain a ‘ra’ and ‘dec’
-        columns with the position in decimal degree.  It must also contains an
-        ‘help_id’ column containing the identifiers.
+        columns with the position in decimal degree.
     specz: astropy.table.Table
         The table containing the specz catalogue from HELP.
     radius: astropy.units.quantity.Quantity
@@ -417,20 +422,8 @@ def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
 
     Return
     ------
-    col_zspec: astropy.table.Column
-        Table column named zspec containing the spectroscopic redshift of each
-        catalogue source, np.nan where no value.
-    col_zqual: astropy.table.Column
-        Table column named zspec_zqual containing the quality flag associated
-        to each redshift, -99 where no value.
-    col_zflag: astropy.table.Column
-        Table column name zspec_association_flag containing a boolean flag
-        indicating the spec-z association that may be problematic because the
-        spec-z row could be associated to another source in the catalogue with
-        the given radius.
-    association_table: astropy.table.Table
-        Table with two column “help_id” and “specz_id” associating the HELP
-        sources to the corresponding spec-z row.
+    astropy.table.Table
+        The catalogue with spectroscopic redshift columns added.
 
     """
     cat_coords = SkyCoord(catalogue['ra'].data * u.deg,
@@ -458,32 +451,29 @@ def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
     idx_cat = idx_cat[unique_idx]
     idx_specz = idx_specz[unique_idx]
 
-    # We create empty columns to be added to the catalogue and take the value
-    # from the associations between the catalogue and the spec-z table.
-    col_zspec = Column(
-        data=np.full(len(catalogue), np.nan),
-        name="zspec"
-    )
-    col_zspec[idx_cat] = specz['z_spec'][idx_specz]
+    # We add the spec-z columns to the catalogue.
+    catalogue.add_column(
+        Column(data=np.full(len(catalogue), '', dtype='<U33'),
+               name="specz_id"))
+    catalogue['specz_id'][idx_cat] = specz['specz_id'][idx_specz]
 
-    col_zqual = Column(
-        data=np.full(len(catalogue), -99, dtype=int),
-        name="zspec_qual"
-    )
-    col_zqual[idx_cat] = specz['z_qual'][idx_specz]
+    catalogue.add_column(
+        Column(data=np.full(len(catalogue), np.nan),
+               name="zspec"))
+    catalogue['zspec'][idx_cat] = specz['z_spec'][idx_specz]
 
-    col_zflag = Column(
-        data=np.full(len(catalogue), False, dtype=bool),
-        name="zspec_assocation_flag"
-    )
-    col_zflag[idx_cat] = np.in1d(idx_specz, idx_specz_toflag)
+    catalogue.add_column(
+        Column(data=np.full(len(catalogue), -99, dtype=int),
+               name="zspec_qual"))
+    catalogue['zspec_qual'][idx_cat] = specz['z_qual'][idx_specz]
 
-    # Table associating HELP indices to the Specz indices
-    association_table = Table(
-        [catalogue['help_id'][idx_cat], specz['specz_id'][idx_specz]]
-    )
+    catalogue.add_column(
+        Column(data=np.full(len(catalogue), False, dtype=bool),
+               name="zspec_association_flag"))
+    catalogue['zspec_association_flag'][idx_cat] = \
+        np.in1d(idx_specz, idx_specz_toflag)
 
-    return col_zspec, col_zqual, col_zflag, association_table
+    return catalogue
 
 
 def nb_astcor_diag_plot(cat_ra, cat_dec, ref_ra, ref_dec, radius=0.6*u.arcsec,
