@@ -397,6 +397,133 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     return merged_catalogue
 
 
+def merge_catalogues_tiled(cat1, 
+                           cat2, cat2_ra_col, cat2_dec_col,
+                            radius=0.4*u.arcsec, 
+                            near_ra0=False,
+                            tile_side=1):
+    """Merge two catalogues on a tile by tile basis to optimise memory usage
+
+    This function merges the second catalogue into the first one using the
+    given radius to associate identical sources.  This function takes care to
+    associate only one source of one catalogue to the other.  The sources that
+    may be associated to various counterparts in the other catalogue are
+    flagged as “maybe spurious association” with a true value in the
+    flag_merged column.  If this column is present in the first catalogue, it's
+    content is “inherited” during the merge.
+
+    Parameters
+    ----------
+    cat_1: astropy.table.Table
+        The table containing the first catalogue.  This is the master catalogue
+        used during the merge.  If it has a “flag_merged” column it's content
+        will be re-used in the flagging of the spurious merges.  This catalogue
+        must contain a ‘ra’ and a ‘dec’ columns with the position in decimal
+        degrees.
+    cat_2: astropy.table.Table
+        The table containing the second catalogue.
+    cat2_racol_2: string
+        Name of the column in the second table containing the right ascension
+        in decimal degrees.
+    cat2_decol_2: string
+        Name of the column in the second table containing the declination in
+        decimal degrees.
+    radius: astropy.units.quantity.Quantity
+        The radius to associate identical sources in the two catalogues.
+
+    Returns
+    -------
+    astropy.table.Table
+        The merged catalogue.
+    """
+
+    def _get_coordinates(table, ra_col, dec_col, near_ra0):
+        """Function to get the coordinates from a table returning right
+        ascension between -180 and 180 when around ra=0"""
+        coords = SkyCoord(table[ra_col], table[dec_col])
+        dec = coords.dec.value
+        if near_ra0:
+            ra = coords.ra.wrap_at(180 * u.deg).value
+        else:
+            ra = coords.ra.value
+        return ra, dec
+
+    # Position must be given in degrees
+    cat1["ra"].unit = u.deg
+    cat1["dec"].unit = u.deg
+
+    cat1_ra, cat1_dec = _get_coordinates(cat1, "ra", "dec", near_ra0)
+    cat2_ra, cat2_dec = _get_coordinates(cat2, cat2_ra_col, cat2_dec_col, near_ra0)
+
+    both_ra_min, both_ra_max = np.percentile(np.append(cat1_ra, cat2_ra), [0., 100.])
+    both_dec_min, both_dec_max = np.percentile(np.append(cat1_dec, cat2_dec), [0., 100.])
+
+    both_ra_width = both_ra_max - both_ra_min
+    both_dec_width = both_dec_max - both_dec_min
+
+    # Number of tiles in the ra and dec directions
+    nb_tiles_ra, nb_tiles_dec = np.ceil(
+        [both_ra_width/tile_side, both_dec_width/tile_side]).astype(int)
+    LOGGER.info("The catalogue is divided in %i x %i (RA, Dec) tiles",
+                nb_tiles_ra, nb_tiles_dec)
+
+    result_table = None
+
+    for idx_tile_ra, idx_tile_dec in product(range(nb_tiles_ra),
+                                             range(nb_tiles_dec)):
+        tile_ra_min = both_ra_min + idx_tile_ra * tile_side
+        tile_ra_max = tile_ra_min + tile_side
+        tile_dec_min = both_dec_min + idx_tile_dec * tile_side
+        tile_dec_max = tile_dec_min + tile_side
+
+        LOGGER.info("Processing RA between %f and %f, and Dec between %f "
+                    "and %f", tile_ra_min, tile_ra_max, tile_dec_min,
+                    tile_dec_max)
+
+        # As we are merging objects based on their surrounding, we must add
+        # a margin to the tiles we are processing.  We use a margin of
+        # 3 arc-second i.e. 0.05°.
+        cat1_tile_mask = (cat1_ra >= tile_ra_min - 0.05) & \
+                    (cat1_ra <= tile_ra_max + 0.05) & \
+                    (cat1_dec >= tile_dec_min - 0.05) & \
+                    (cat1_dec <= tile_dec_max + 0.05)
+
+        cat2_tile_mask = (cat2_ra >= tile_ra_min - 0.05) & \
+                    (cat2_ra <= tile_ra_max + 0.05) & \
+                    (cat2_dec >= tile_dec_min - 0.05) & \
+                    (cat2_dec <= tile_dec_max + 0.05)
+
+        tmp_result = merge_catalogues(cat1[cat1_tile_mask],
+                                      cat2[cat2_tile_mask], 
+                                       cat2_ra_col,
+                                       cat2_dec_col, 
+                                       radius=radius)
+                                       
+
+        # From this result, we must only keep the sources that are strictly
+        # inside the tile, we keep only the right/top border of the tile
+        # except for the first tiles in the row/column.
+        tmp_ra, tmp_dec = _get_coordinates(tmp_result, "ra", "dec",
+                                           near_ra0)
+        if idx_tile_ra == 0:
+            tmp_tile_mask = (tmp_ra >= tile_ra_min) & (tmp_ra <= tile_ra_max)
+        else:
+            tmp_tile_mask = (tmp_ra > tile_ra_min) & (tmp_ra <= tile_ra_max)
+
+        if idx_tile_dec == 0:
+            tmp_tile_mask &= (tmp_dec >= tile_dec_min) & \
+                             (tmp_dec <= tile_dec_max)
+        else:
+            tmp_tile_mask &= (tmp_dec > tile_dec_min) & \
+                             (tmp_dec <= tile_dec_max)
+
+        if result_table is None:
+            result_table = tmp_result[tmp_tile_mask]
+        else:
+            result_table = vstack([result_table, tmp_result[tmp_tile_mask]])
+
+    return result_table
+
 def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
     """Create the spec-z columns to be added to a catalogue.
 
