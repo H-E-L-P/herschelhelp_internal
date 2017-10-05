@@ -756,6 +756,7 @@ def nb_compare_mags(x, y, labels=("x", "y")):
         The labels of the two values.
 
     """
+    x_label, y_label = labels
 
     # Use only finite values
     mask = np.isfinite(x) & np.isfinite(y)
@@ -767,7 +768,8 @@ def nb_compare_mags(x, y, labels=("x", "y")):
 
     # If the difference is all NaN there is nothing to compare.
     if np.isnan(diff).all():
-        print("There are no overlapping magnitudes...")
+        print("No sources have both {} and {} values.".format(
+            x_label, y_label))
         return
 
     # Median, Median absolute deviation and 1% and 99% percentiles
@@ -775,7 +777,6 @@ def nb_compare_mags(x, y, labels=("x", "y")):
     diff_mad = np.median(np.abs(diff - diff_median))
     diff_1p, diff_99p = np.percentile(diff, [1., 99.])
 
-    x_label, y_label = labels
     diff_label = "{} - {}".format(y_label, x_label)
 
     print("{}:".format(diff_label))
