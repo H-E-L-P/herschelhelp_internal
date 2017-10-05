@@ -1055,7 +1055,8 @@ def nb_histograms(table, column_names, labels=None):
         if not np.isnan(table[name]).all():
             vz.hist(table[name][mask], bins='scott', label=label, alpha=.5)
         else:
-            print("HELP warning: One or more of the columns is empty.")
+            print("HELP warning: the column {} ({}) is empty.".format(
+                name, label))
 
     ax.legend()
     display(fig)
