@@ -719,6 +719,11 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
 
     """
     _, _, d2d, _ = main_coords.search_around_sky(second_coords, max_dist)
+    
+    if len(d2d) == 0:
+        print("HELP Warning: There weren't any cross matches. The two surveys probably "
+              "don't overlap.")
+        return
 
     # We may want to limit the number of points used.
     if limit_nb_points is not None and len(d2d) > limit_nb_points:
