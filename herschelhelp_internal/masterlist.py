@@ -1,6 +1,7 @@
 import logging
 from collections import Counter
 from itertools import product
+from glob import glob
 
 import matplotlib as mpl
 import numpy as np
@@ -397,9 +398,9 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     return merged_catalogue
 
 
-def merge_catalogues_tiled(cat1, 
+def merge_catalogues_tiled(cat1,
                            cat2, cat2_ra_col, cat2_dec_col,
-                            radius=0.4*u.arcsec, 
+                            radius=0.4*u.arcsec,
                             near_ra0=False,
                             tile_side=1):
     """Merge two catalogues on a tile by tile basis to optimise memory usage
@@ -494,11 +495,11 @@ def merge_catalogues_tiled(cat1,
                     (cat2_dec <= tile_dec_max + 0.05)
 
         tmp_result = merge_catalogues(cat1[cat1_tile_mask],
-                                      cat2[cat2_tile_mask], 
+                                      cat2[cat2_tile_mask],
                                        cat2_ra_col,
-                                       cat2_dec_col, 
+                                       cat2_dec_col,
                                        radius=radius)
-                                       
+
 
         # From this result, we must only keep the sources that are strictly
         # inside the tile, we keep only the right/top border of the tile
@@ -1067,3 +1068,19 @@ def nb_histograms(table, column_names, labels=None):
     ax.legend()
     display(fig)
     plt.close()
+
+
+def find_last_ml_suffix(directory="./data/"):
+    """Find the data prefix of the last masterlist.
+
+    This function returns the data prefix to use to get the last master list
+    from a directory.
+
+    """
+    suffix_list = [item.split("_")[-1].split(".")[0] for item in
+                   glob("{}master_catalogue*.fits".format(directory))]
+
+    if len(suffix_list) > 0:
+        return sorted(suffix_list)[-1]
+    else:
+        raise ValueError("There is no master list in the directory.")
