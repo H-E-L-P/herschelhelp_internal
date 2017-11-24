@@ -720,7 +720,7 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
 
     """
     _, _, d2d, _ = main_coords.search_around_sky(second_coords, max_dist)
-    
+
     if len(d2d) == 0:
         print("HELP Warning: There weren't any cross matches. The two surveys probably "
               "don't overlap.")
@@ -1084,3 +1084,30 @@ def find_last_ml_suffix(directory="./data/"):
         return sorted(suffix_list)[-1]
     else:
         raise ValueError("There is no master list in the directory.")
+
+
+def quick_checks(catalogue):
+    """Performs some quick checks on a master catalogue.
+
+    This function performs some quick checks on the flux and magnitude columns
+    of a master catalogue:
+    - Look for empty (all NaN) columns;
+    - Look for zero or negative values.
+
+    """
+    for colname in [_ for _ in catalogue.colnames if _.startswith("f_") or
+                    _.startswith("m_") or _.startswith("ferr_") or
+                    _.startswith("merr_")]:
+
+        column = catalogue[colname]
+
+        # Empty columns
+        if np.isnan(column).all():
+            print("The column {} contains only NaN!".format(colname))
+        else:
+            # Negative values
+            minimum = np.nanmin(column)
+            if minimum <= 0:
+                nb_neg = np.sum(column[np.isfinite(column)] <= 0)
+                print("The column {} contains {} zero or negative values!" \
+                      "it's minimum is {}.".format(colname, nb_neg, minimum))
