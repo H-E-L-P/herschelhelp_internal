@@ -1117,7 +1117,7 @@ def quick_checks(catalogue):
         # Empty columns
         if np.isnan(column).all():
             #print("The column {} contains only NaN!".format(colname))
-            check_table['All nan'][check_table['Column'] == column] = True
+            check_table['All nan'][check_table['Column'] == colname] = True
         else:
             # Negative values
             minimum = np.nanmin(column)
