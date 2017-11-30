@@ -71,9 +71,7 @@ def create_holes(gaia,
     #write the ds9regions to file
     f = open(out_file, 'w+')
     
-    for star in stars:
-        if not inMoc(star['ra'],star['dec'],region_moc):
-            continue
+    for star in stars[inMoc(stars['ra'],stars['dec'],region_moc)]:
             
         if star['phot_g_mean_mag'] < 16 and AB ==[np.NaN,np.NaN]:
             f.writelines('circle(' 

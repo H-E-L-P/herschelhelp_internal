@@ -1095,19 +1095,40 @@ def quick_checks(catalogue):
     - Look for zero or negative values.
 
     """
+    
+    check_table = Table()
+    phot_columns = [_ for _ in catalogue.colnames if _.startswith("f_") or
+                    _.startswith("m_") or _.startswith("ferr_") or
+                    _.startswith("merr_")]
+    #print(phot_columns)
+    check_table.add_column(Column(data=phot_columns, name='Column'))
+    check_table.add_column(Column(data=np.full(len(phot_columns), False), name='All nan'))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Measurements'))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Zeros'))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Negative'))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0.0), name='Minimum value'))
+        
     for colname in [_ for _ in catalogue.colnames if _.startswith("f_") or
                     _.startswith("m_") or _.startswith("ferr_") or
                     _.startswith("merr_")]:
 
         column = catalogue[colname]
-
+        check_table['#Measurements'][check_table['Column'] == colname] = np.sum(~np.isnan(column))
         # Empty columns
         if np.isnan(column).all():
-            print("The column {} contains only NaN!".format(colname))
+            #print("The column {} contains only NaN!".format(colname))
+            check_table['All nan'][check_table['Column'] == column] = True
         else:
             # Negative values
             minimum = np.nanmin(column)
             if minimum <= 0:
-                nb_neg = np.sum(column[np.isfinite(column)] <= 0)
-                print("The column {} contains {} zero or negative values!" \
-                      "it's minimum is {}.".format(colname, nb_neg, minimum))
+                nb_neg = np.sum(column[np.isfinite(column)] < 0)
+                nb_zero = np.sum(column[np.isfinite(column)] == 0)
+                #print("The column {} contains {} zero or negative values!" \
+                #      "it's minimum is {}.".format(colname, nb_neg, minimum))
+                check_table['#Zeros'][check_table['Column'] == colname] = nb_zero
+                check_table['#Negative'][check_table['Column'] == colname] = nb_neg
+                check_table['Minimum value'][check_table['Column'] == colname] = minimum
+    #check_table.show_in_notebook()
+    print('Table shows only problematic columns.')
+    return check_table[~((check_table['All nan'] == False) & (check_table['#Zeros'] == 0) & (check_table['#Negative'] == 0))]
