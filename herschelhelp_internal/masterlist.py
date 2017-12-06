@@ -1102,11 +1102,13 @@ def quick_checks(catalogue):
                     _.startswith("merr_")]
     #print(phot_columns)
     check_table.add_column(Column(data=phot_columns, name='Column'))
-    check_table.add_column(Column(data=np.full(len(phot_columns), False), name='All nan'))
-    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Measurements'))
-    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Zeros'))
-    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Negative'))
-    check_table.add_column(Column(data=np.full(len(phot_columns), 0.0), name='Minimum value'))
+    check_table.add_column(Column(data=np.full(len(phot_columns), False), 
+                                  name='All nan', 
+                                  dtype=bool))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Measurements', dtype=int))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Zeros', dtype=int))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0), name='#Negative', dtype=int))
+    check_table.add_column(Column(data=np.full(len(phot_columns), 0.0), name='Minimum value', dtype=float))
         
     for colname in [_ for _ in catalogue.colnames if _.startswith("f_") or
                     _.startswith("m_") or _.startswith("ferr_") or
