@@ -113,9 +113,11 @@ def flag_outliers(catalogue, col1, col2, errcol1, errcol2, flagcol1, flagcol2, l
     # Add flag columns if does not exist
     #print(flagcol1, catalogue.colnames, (flagcol1 not in catalogue.colnames))
     if flagcol1 not in catalogue.colnames:
-        catalogue.add_column(Column(data = np.zeros(len(catalogue)), dtype=bool), name=flagcol1)
+        catalogue.add_column(Column(data = np.zeros(len(catalogue)), 
+        dtype=bool, name=flagcol1))
     if flagcol2 not in catalogue.colnames:
-        catalogue.add_column(Column(data = np.zeros(len(catalogue)), dtype=bool), name=flagcol2)
+        catalogue.add_column(Column(data = np.zeros(len(catalogue)), 
+        dtype=bool, name=flagcol2))
     flagx, flagy = catalogue[flagcol1], catalogue[flagcol2]
         
     ## Find outliers  
