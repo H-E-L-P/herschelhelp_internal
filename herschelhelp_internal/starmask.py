@@ -105,6 +105,12 @@ def reg2moc(region_file, fieldmoc, target, ra_typ = 0.0, dec_typ = 0.0, order = 
         Location of ds9 region file.
     fieldmoc: string
         Location of the MOC describing the unmasked field 
+    target: string
+        Location of output MOC fits file.
+    ra_typ: float
+        A ra position in the field  required due to header requiring a WCS
+    dec_typ: float
+        A dec position in the field  required due to header requiring a WCS
     order: int
         Order of MOC to use
 
@@ -186,7 +192,7 @@ LATPOLE = 90.0 / [deg] Native latitude of celestial pole
     
     # creates new MOC, with the ds9 region taken out OR only keeping the ds9 region
     hp_idx = np.array(hp_idx)
-    MOC(order=order,cells = hp_idx[mask]).write(target)
+    MOC(order=order,cells = hp_idx[mask]).write(target, overwrite=True)
     
 #    
 #def cat2moc(starcatfile,fieldmocfile,radius=10*u.arcsec,order=17):
