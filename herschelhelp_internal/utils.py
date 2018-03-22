@@ -171,7 +171,7 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec,
     near_ra0: bool
         Set to True when the coordinates are around the ra=0 limit; the ra will
         be transformed to be between -180 and 180 to avoid large differences
-        like 359° - 1°. Default to False.
+        like 359 - 1 deg. Default to False.
 
     Returns
     -------
