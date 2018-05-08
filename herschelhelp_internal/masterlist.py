@@ -1134,3 +1134,10 @@ def quick_checks(catalogue):
     #check_table.show_in_notebook()
     print('Table shows only problematic columns.')
     return check_table[~((check_table['All nan'] == False) & (check_table['#Zeros'] == 0) & (check_table['#Negative'] == 0))]
+    
+    
+    
+
+class help_dr1:
+    def __init__(self):
+        self.masterlist_overview = Table.read('dr1_overview.fits')

@@ -142,7 +142,7 @@ def flag_outliers(catalogue, col1, col2, errcol1, errcol2, flagcol1, flagcol2, l
         print("No sources have both {} and {} values.".format(
             x_label, y_label))
         print("")
-        return
+        return catalogue
     
     diff_label = "{} - {}".format(y_label, x_label)
     print("{}:".format(diff_label))
