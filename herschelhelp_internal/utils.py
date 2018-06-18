@@ -6,8 +6,9 @@ import sfdmap
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
-from astropy.table import Column
+from astropy.table import Column, Table
 
+import yaml
 
 def mag_to_flux(magnitudes, errors_on_magnitudes=None):
     """Convert AB magnitudes and errors to fluxes
@@ -329,3 +330,45 @@ def ebv(ra, dec):
     )
 
     return Column(dust_maps.ebv(ra, dec), "ebv")
+
+
+
+def add_column_meta(catalogue, column_yml_file):
+    """Add column descriptions and other meta data
+        
+    Given a table and a yml file with a list of column names 
+    and descriptions and ucd descriptors write all these to 
+    the appropriate columns in the table.
+
+
+    Parameters
+    ----------
+    catalogue: astropy.table.Table object
+        The table to add descriptions to
+    column_yml_file: String
+        link to yml file describing column definitions.
+
+    Returns
+    -------
+    catalogue: astropy.table.Table object
+        The output catalogue as input but with added column meta.
+    
+    """
+    meta = yaml.load(open(column_yml_file, "r"))
+    
+    for col in catalogue.itercols():
+        try:
+            unit = meta[col.name]['unit']
+            if unit != "None":
+                catalogue[col.name].unit = unit
+            catalogue[col.name].description = meta[col.name]['description']
+        except KeyError:
+            print("Column {} has missing data".format(col.name))
+
+        
+    return catalogue
+        
+    
+    
+
+
