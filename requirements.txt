@@ -4,3 +4,6 @@ healpy
 sfdmap
 seaborn
 matplotlib-venn
+yaml
+pyregion
+humanfriendly
