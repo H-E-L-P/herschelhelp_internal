@@ -5,5 +5,5 @@ sfdmap
 seaborn
 matplotlib-venn
 yaml
-pyregion
+pyregion==1.2.0
 humanfriendly
