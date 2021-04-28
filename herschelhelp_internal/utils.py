@@ -142,7 +142,7 @@ def aperture_correction(mag, mag_target, stellarity=None, mag_min=None,
     # target, the difference must be the targets minus the magnitudes.
     mag_diff = mag_target - mag
 
-    _, median, std = sigma_clipped_stats(mag_diff[mask], sigma=3.0, iters=5)
+    _, median, std = sigma_clipped_stats(mag_diff[mask], sigma=3.0)
 
     # FIXME: Why do we use the median of the sigma clipping? (It's on Eduardo
     # code).
@@ -202,8 +202,8 @@ def astrometric_correction(coords, ref_coords, max_radius=0.6*u.arcsec,
     ra_diff = ref_ra - ra
     dec_diff = ref_dec - dec
 
-    _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0, iters=5)
-    _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0, iters=5)
+    _, delta_ra, _ = sigma_clipped_stats(ra_diff.arcsec, sigma=3.0)
+    _, delta_dec, _ = sigma_clipped_stats(dec_diff.arcsec, sigma=3.0)
 
     return delta_ra * u.arcsec, delta_dec * u.arcsec
 
