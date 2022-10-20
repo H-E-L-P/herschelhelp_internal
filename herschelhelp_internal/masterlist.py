@@ -5,7 +5,7 @@ from glob import glob
 
 import matplotlib as mpl
 import numpy as np
-import seaborn.apionly as sns
+import seaborn as sns
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Angle
 from astropy.table import Column, hstack, Table, vstack
