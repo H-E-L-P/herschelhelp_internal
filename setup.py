@@ -36,6 +36,9 @@ setup(
     author_email="yannick.roehlly@lam.fr",
     license='MIT',
     install_requires=REQUIREMENTS,
+    package_data={
+        'herschelhelp_internal/sfd_data': ['*.fits'],
+    },
     packages=find_packages(exclude=['database_builder']),
     # cmdclass={'build': CustomBuild},
 )
