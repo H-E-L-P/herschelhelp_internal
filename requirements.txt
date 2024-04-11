@@ -1,9 +1,9 @@
 astropy
 pymoc
 healpy
-sfdmap
+sfdmap2
 seaborn
 matplotlib-venn
-yaml
+pyyaml
 pyregion==1.2.0
 humanfriendly

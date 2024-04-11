@@ -2,7 +2,7 @@ import pkg_resources
 
 import healpy as hp
 import numpy as np
-import sfdmap
+from sfdmap2 import sfdmap
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats

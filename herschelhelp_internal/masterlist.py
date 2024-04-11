@@ -271,6 +271,8 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
         The merged catalogue.
 
     """
+    cat_1=cat_1.copy()
+    cat_2=cat_2.copy()
     cat_1['ra'].unit = u.deg
     cat_1['dec'].unit = u.deg
     coords_1 = SkyCoord(cat_1['ra'], cat_1['dec'])
@@ -734,8 +736,8 @@ def nb_merge_dist_plot(main_coords, second_coords, max_dist=5 * u.arcsec,
         d2d = d2d[random_mask]
 
     if isinstance(d2d, Angle):
-        sns.distplot(d2d.arcsec)
-        plt.xticks(np.arange(max_dist.value))
+        sns.displot(d2d.arcsec)
+        #plt.xticks(np.arange(max_dist.value))
         plt.xlabel("Distance [{}]".format(max_dist.unit))
     else:
         print("There weren't any cross matches. The two surveys probably "
