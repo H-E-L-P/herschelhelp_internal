@@ -33,6 +33,8 @@ jobs:
         pip install build
     - name: Build package
       run: python -m build
+    - name: Download SFD maps
+      run: bash get_sfd_maps.sh
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@release/v1
 
