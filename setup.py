@@ -34,12 +34,13 @@ REQUIREMENTS = [
 
 setup(
     name="herschelhelp_internal",
-    version="1.0.4",
+    version="1.0.5",
     description="HELP project internal code",
     long_description=README,
     author="Yannick Roehlly",
     author_email="yannick.roehlly@lam.fr",
     license='MIT',
+    setup_requires=['numpy'],
     install_requires=REQUIREMENTS,
     package_data={
         'herschelhelp_internal/sfd_data': ['*.fits'],
