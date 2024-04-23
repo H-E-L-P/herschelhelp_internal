@@ -10,11 +10,16 @@ with open(os.path.join(HERE, 'README.md')) as f:
     README = f.read()
 
 REQUIREMENTS = [
+    'numpy',
     'astropy',
     'pymoc',
     'healpy',
     'sfdmap2',
-    'seaborn'
+    'seaborn',
+    'matplotlib-venn',
+    'pyyaml',
+    'pyregion',
+    'humanfriendly'
 ]
 
 
@@ -29,7 +34,7 @@ REQUIREMENTS = [
 
 setup(
     name="herschelhelp_internal",
-    version="1.0.2",
+    version="1.0.3",
     description="HELP project internal code",
     long_description=README,
     author="Yannick Roehlly",
