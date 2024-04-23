@@ -29,7 +29,7 @@ REQUIREMENTS = [
 
 setup(
     name="herschelhelp_internal",
-    version="1.0.1",
+    version="1.0.2",
     description="HELP project internal code",
     long_description=README,
     author="Yannick Roehlly",
