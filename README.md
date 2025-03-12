@@ -13,11 +13,11 @@ Provided you installed [Anaconda](https://www.continuum.io/) or
 run:
 
 ```Shell
-$ conda create -n herschelhelp_internal python=3
-$ source activate herschelhelp_internal
+$ conda create -n herschelhelp_internal
+$ conda activate herschelhelp_internal
 $ conda install  -c openastronomy astropy healpy scipy seaborn
 $ pip install -r requirements.txt
-$ python setup.py develop
+$ pip install -e .
 ```
 
 You will need to activate this new environment with `source activate
