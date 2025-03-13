@@ -18,7 +18,7 @@ REQUIREMENTS = [
     'seaborn',
     'matplotlib-venn',
     'pyyaml',
-    'pyregion==1.2.0',
+    'pyregion',
     'humanfriendly'
 ]
 
@@ -34,7 +34,6 @@ REQUIREMENTS = [
 
 setup(
     name="herschelhelp_internal",
-    version="1.0.5",
     description="HELP project internal code",
     long_description=README,
     author="Yannick Roehlly",
