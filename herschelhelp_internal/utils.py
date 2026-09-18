@@ -294,15 +294,15 @@ def gen_help_id(ra, dec, base_id=b"HELP_J"):
     coords = SkyCoord(ra, dec)
 
     idcol = np.array(coords.to_string(style='hmsdms', precision=3),
-                     dtype=np.string_)
+                     dtype=np.bytes_)
     idcol = np.char.replace(idcol, b'h', b'')
     idcol = np.char.replace(idcol, b'm', b'')
     idcol = np.char.replace(idcol, b's ', b'')
     idcol = np.char.replace(idcol, b'd', b'')
     idcol = np.char.replace(idcol, b's', b'')
-    idcol = np.full(idcol.shape, base_id, dtype=np.object) + idcol
+    idcol = np.full(idcol.shape, base_id, dtype=object) + idcol
 
-    return Column(data=idcol.astype(np.string_), name="help_id")
+    return Column(data=idcol.astype(np.bytes_), name="help_id")
 
 
 def ebv(ra, dec):
