@@ -1,4 +1,6 @@
-import pkg_resources
+from importlib.resources import files
+
+
 
 import healpy as hp
 import numpy as np
@@ -326,7 +328,7 @@ def ebv(ra, dec):
         An astropy table column named `ebv`.
     """
     dust_maps = sfdmap.SFDMap(
-        pkg_resources.resource_filename(__name__, 'sfd_data')
+        str(files(__name__) / 'sfd_data')
     )
 
     return Column(dust_maps.ebv(ra, dec), "ebv")
