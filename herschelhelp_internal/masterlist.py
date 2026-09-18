@@ -103,7 +103,7 @@ def remove_duplicates(table, ra_col="ra", dec_col="dec",
     # indexes are the most important. We can look at the idx1 list and remove
     # all the sources that are associated to another source with a lower index.
     remove_idx = idx1[idx1 > idx2]
-    keep_idx = np.in1d(np.arange(len(table)), remove_idx, invert=True)
+    keep_idx = np.isin(np.arange(len(table)), remove_idx, invert=True)
 
     return table[keep_idx]
 
@@ -298,8 +298,8 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     toflag_idx_2 = np.unique([item for item, count in Counter(idx_2).items()
                               if count > 1])
     # Flagging the sources associated to duplicates
-    dup_associated_in_idx1 = np.in1d(idx_2, toflag_idx_2)
-    dup_associated_in_idx2 = np.in1d(idx_1, toflag_idx_1)
+    dup_associated_in_idx1 = np.isin(idx_2, toflag_idx_2)
+    dup_associated_in_idx2 = np.isin(idx_1, toflag_idx_1)
     toflag_idx_1 = np.unique(np.concatenate(
         (toflag_idx_1, idx_1[dup_associated_in_idx1])
     ))
@@ -311,15 +311,15 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
     # is named "flag_merged_2" and will be combined to the flag_merged column
     # one the merge is done.
     try:
-        cat_1["flag_merged"] |= np.in1d(np.arange(len(cat_1), dtype=int),
+        cat_1["flag_merged"] |= np.isin(np.arange(len(cat_1), dtype=int),
                                         toflag_idx_1)
     except KeyError:
         cat_1.add_column(Column(
-            data=np.in1d(np.arange(len(cat_1), dtype=int), toflag_idx_1),
+            data=np.isin(np.arange(len(cat_1), dtype=int), toflag_idx_1),
             name="flag_merged"
         ))
     cat_2.add_column(Column(
-        data=np.in1d(np.arange(len(cat_2), dtype=int), toflag_idx_2),
+        data=np.isin(np.arange(len(cat_2), dtype=int), toflag_idx_2),
         name="flag_merged_2"
     ))
 
@@ -352,8 +352,8 @@ def merge_catalogues(cat_1, cat_2, racol_2, decol_2, radius=0.4*u.arcsec):
         match_idx_2 = np.concatenate((match_idx_2, new_match_idx_2))
 
         # We remove the matching sources in both catalogues.
-        to_remove = (np.in1d(idx_1, new_match_idx_1) |
-                     np.in1d(idx_2, new_match_idx_2))
+        to_remove = (np.isin(idx_1, new_match_idx_1) |
+                     np.isin(idx_2, new_match_idx_2))
         idx_1 = idx_1[~to_remove]
         idx_2 = idx_2[~to_remove]
 
@@ -600,7 +600,7 @@ def specz_merge(catalogue, specz, radius=0.4*u.arcsec):
         Column(data=np.full(len(catalogue), False, dtype=bool),
                name="zspec_association_flag"))
     catalogue['zspec_association_flag'][idx_cat] = \
-        np.in1d(idx_specz, idx_specz_toflag)
+        np.isin(idx_specz, idx_specz_toflag)
 
     return catalogue
 
