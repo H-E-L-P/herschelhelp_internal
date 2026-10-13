@@ -13,11 +13,11 @@ Provided you installed [Anaconda](https://www.continuum.io/) or
 run:
 
 ```Shell
-$ conda create -n herschelhelp_internal
-$ conda activate herschelhelp_internal
-$ conda install  -c openastronomy astropy healpy scipy seaborn
-$ pip install -r requirements.txt
-$ pip install -e .
+conda create -n herschelhelp_internal
+conda activate herschelhelp_internal
+conda install  -c openastronomy astropy healpy scipy seaborn
+pip install -r requirements.txt
+pip install -e .
 ```
 
 You will need to activate this new environment with `source activate
@@ -30,13 +30,13 @@ If one need to use this code inside a Jupyter notebook, one should install the
 notebook stuff:
 
 ```Shell
-$ conda install notebook
+conda install notebook
 ```
 
 and add the environment Python to the list of kernels for Jupyter:
 
 ```Shell
-$ python -m ipykernel install --user --name helpint --display-name "Python (herschelhelp_internal)"
+python -m ipykernel install --user --name helpint --display-name "Python (herschelhelp_internal)"
 ```
 
 The notebooks must be set to use this kernel.
