@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "herschelhelp_internal"
+dynamic = ["version"]
+description = "HELP project internal code"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Yannick Roehlly", email = "yannick.roehlly@lam.fr" },
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "astropy",
+    "pymoc",
+    "healpy",
+    "sfdmap2",
+    "seaborn",
+    "matplotlib-venn",
+    "pyyaml",
+    "pyregion",
+    "humanfriendly",
+]
+
+[project.urls]
+Homepage = "https://github.com/H-E-L-P/herschelhelp_internal"
+
+[tool.setuptools.packages.find]
+exclude = ["database_builder*", "build*"]
+
+[tool.setuptools.package-data]
+herschelhelp_internal = ["sfd_data/*.fits"]
+
+[tool.setuptools_scm]
